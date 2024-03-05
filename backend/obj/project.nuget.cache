@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "NGWLA7D1jY3xYkUvBUucgKrknSwLSkSapi/1RWdmpRrlMKofW4/Vt01zEY23aQ3LruYToKvYqmrd2z2ssDN+IQ==",
+  "dgSpecHash": "4q4RGxlJ9LVMPOYkPh0uCFqybuYoVC4MwM8faNVZgaayX3Ld2zZHjnm2BlwJqHKDLRPH9k3s7NwWZ6HX8iCx1w==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Ross\\OneDrive\\Projects\\copilot-test\\backend\\backend.csproj",
+  "projectFilePath": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Ross\\.nuget\\packages\\microsoft.aspnetcore.openapi\\7.0.10\\microsoft.aspnetcore.openapi.7.0.10.nupkg.sha512",
     "C:\\Users\\Ross\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",
