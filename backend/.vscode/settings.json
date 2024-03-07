@@ -1,0 +1,5 @@
+{
+    "appService.preDeployTask": "publish-release",
+    "appService.deploySubpath": "bin\\Release\\net7.0\\publish",
+    "appService.defaultWebAppToDeploy": "/subscriptions/58cf8813-41d4-4b7a-aa06-60949f9bc8cb/resourceGroups/rwhite83-general-permission-group/providers/Microsoft.Web/sites/rwhite83-openAI-test"
+}

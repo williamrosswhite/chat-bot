@@ -36,3 +36,4 @@ C:\Users\Ross\OneDrive\Projects\chatbot\backend\obj\Release\net7.0\refint\backen
 C:\Users\Ross\OneDrive\Projects\chatbot\backend\obj\Release\net7.0\backend.pdb
 C:\Users\Ross\OneDrive\Projects\chatbot\backend\obj\Release\net7.0\backend.genruntimeconfig.cache
 C:\Users\Ross\OneDrive\Projects\chatbot\backend\obj\Release\net7.0\ref\backend.dll
+C:\Users\Ross\OneDrive\Projects\chatbot\backend\bin\Release\net7.0\backend.staticwebassets.runtime.json
