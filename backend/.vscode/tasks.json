@@ -9,8 +9,38 @@
 			"group": "build",
 			"label": "Build: backend.csproj",
 			"detail": "Build the backend.csproj project using dotnet build",
-            "command": "dotnet",
-            "args": ["watch", "run"]
+			"command": "dotnet",
+			"args": [
+				"watch",
+				"run"
+			]
+		},
+		{
+			"label": "clean",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"clean",
+				"${workspaceFolder}",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "publish-release",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"publish",
+				"${workspaceFolder}",
+				"--configuration",
+				"Release",
+				"/property:GenerateFullPaths=true",
+				"/consoleloggerparameters:NoSummary"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": "clean"
 		}
 	]
 }

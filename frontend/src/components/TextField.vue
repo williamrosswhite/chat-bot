@@ -32,7 +32,7 @@
       processPrompt() {
         this.history.push({ role: 'user', content: this.userPromptText });
         let historyArray = toRaw(this.history);
-        axios.post(process.env.VUE_APP_API_URL, { 
+        axios.post(`${process.env.VUE_APP_API_URL}/api/OpenAI`, { 
           messages: historyArray,
         })
         .then(response => {

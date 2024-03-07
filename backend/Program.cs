@@ -26,7 +26,7 @@ else {
 
 // Enable CORS
 app.UseCors(builder => builder
-    .WithOrigins("http://localhost:5111", "http://localhost:5112", "https://localhost:5113") // Include both addresses
+    .WithOrigins("http://localhost:5111", "http://localhost:5112", "https://localhost:5113", "https://rwhite83-openai-test.azurewebsites.net/") // Include both addresses
     .AllowAnyHeader()
     .AllowAnyMethod()
     .AllowCredentials());
