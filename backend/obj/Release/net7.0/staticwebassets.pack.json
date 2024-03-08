@@ -1,8 +1,16 @@
 {
   "Files": [
     {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\css\\app.b32cc245.css",
+      "PackagePath": "staticwebassets\\css\\app.b32cc245.css"
+    },
+    {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\css\\app.fcb3f7b0.css",
       "PackagePath": "staticwebassets\\css\\app.fcb3f7b0.css"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\css\\app.ffee2b05.css",
+      "PackagePath": "staticwebassets\\css\\app.ffee2b05.css"
     },
     {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\favicon.ico",
@@ -29,6 +37,14 @@
       "PackagePath": "staticwebassets\\js\\app.25beb3d7.js.map"
     },
     {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.3bc657a5.js",
+      "PackagePath": "staticwebassets\\js\\app.3bc657a5.js"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.3bc657a5.js.map",
+      "PackagePath": "staticwebassets\\js\\app.3bc657a5.js.map"
+    },
+    {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.4ac596ce.js",
       "PackagePath": "staticwebassets\\js\\app.4ac596ce.js"
     },
@@ -43,6 +59,14 @@
     {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.53c9036c.js.map",
       "PackagePath": "staticwebassets\\js\\app.53c9036c.js.map"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.9a741703.js",
+      "PackagePath": "staticwebassets\\js\\app.9a741703.js"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.9a741703.js.map",
+      "PackagePath": "staticwebassets\\js\\app.9a741703.js.map"
     },
     {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.a93bebdf.js",

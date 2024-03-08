@@ -38,7 +38,7 @@
         .then(response => {
           console.log('tracking error: ', response)
           if(response.data.error?.code === "rate_limit_exceeded") {
-            alert('Whoops!  Too eager!\nRequests per minute limit exceeded, give it a second to cool down.')
+            alert('Whoops!  Too eager dude!\nRequests per minute limit exceeded, give it a second to cool down.')
           } else {
             let extractedResponse = response.data.choices[0].message;
             console.log('response: ', extractedResponse);

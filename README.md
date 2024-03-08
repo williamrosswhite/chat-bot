@@ -18,32 +18,31 @@ This is just a demo project for me to learn things while I'm on the bench at wor
 ```
 - open two terminals in Visual Studio or however else you like
 - navigate to ./chatbot/backend in one of them
-- run `dotnet run --launch-profile Development` (or `dotnet watch run --launch-profile Development` to hot reload)
+- run `dotnet watch run` for hot reload 
     - or to debug, open Visual Studio debugger and select 'Development (http)' configuration and then launch debugger
-    * launching backend in development mode through debugger will automatically use 'watch run'
+    - backendw will launch a swagger tab at http://localhost/5111
 - in the other terminal/window, navigate to ./chatbot/frontend
 - run `npm run serve`
 - browser will launch to application at http://localhost:5112/
-    - note this is uncertified here, different from staging version below
+    - note this is uncertified here, deliberately different from deployed version
 - you can also navigate to swagger on the server's port at http://localhost:5111
 ```
 
-## Staging Testing
-
+## Deploy to Azure
 ```
-- open a terminals in Visual Studio or however else you like
-- navigate to ./chatbot/backend
-- run `dotnet run --launch-profile Staging` (or `dotnet watch run --launch-profile Staging` to hot reload)
-    - or to debug, open Visual Studio debugger and select 'Staging (https)' configuration and then launch debugger
-- if launching from terminal, navigate to https://localhost:5113 in your browser
-    - if debugging, browser will automatically launch to http://localhost:5113
-    - note this is certified here, different from development version above
+- in ./chatbot/frontend, run npm run build
+- this will generate build files and copy them to backend's wwwroot folder
+- open Visual Studio Code to backend project, then go to Azure tab
+- open OpenAi Chatbot Pay-As-You-Go -> App Services, and right click on rwhite83-openAI-test
+- select Deploy to Web App
 ```
 
 ### Next Steps
 
 ```
-- tomorrow I will focus on getting the staging version to automatically build and deploy front end files from front end dist folder to backend wwwroot folder, and then focus on getting the app successfully deployed on Azure to be able to demo to people
+- create an image generation service on my page
+- create a login
+- implement a database to save user's activity
 - after that, I will focus on either learning more Vue in making a more interesting UI interface, or learning more about OpenAI prompt engineering
 - whichever I focus on first, the other will come after
 ```
