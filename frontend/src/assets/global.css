@@ -26,13 +26,14 @@
   }
   
   a {
-    color: green;
+    color: #42b983;
   }
   
   .assistant {
     color: #631497;
+    ;
   }
   
   .user {
-    color: darkslategray;
+    color: green;
   }
