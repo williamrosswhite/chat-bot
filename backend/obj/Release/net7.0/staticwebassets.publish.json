@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "2zcp0S0PJu14J88bNlK3WZTkHiPAoF2VyCR8AhBp16g=",
+  "Hash": "aJSiUwseoJl4h0uFTMYwh5NHD2rpwDPwWP1PjxugL9Q=",
   "Source": "backend",
   "BasePath": "_content/backend",
   "Mode": "Default",
@@ -16,6 +16,23 @@
     }
   ],
   "Assets": [
+    {
+      "Identity": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\css\\app.0c264b89.css",
+      "SourceId": "backend",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\",
+      "BasePath": "_content/backend",
+      "RelativePath": "css/app.0c264b89.css",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\css\\app.0c264b89.css"
+    },
     {
       "Identity": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\css\\app.b32cc245.css",
       "SourceId": "backend",
