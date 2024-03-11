@@ -9,10 +9,12 @@ using Newtonsoft.Json;
 
 public class OpenAIClient
 {
+    private readonly ChatbotDBContext _context;
     private readonly HttpClient _httpClient;
 
-    public OpenAIClient()
+    public OpenAIClient(ChatbotDBContext context)
     {
+        _context = context;
         _httpClient = new HttpClient
         {
             BaseAddress = new Uri("https://api.openai.com/")
@@ -62,17 +64,41 @@ public class OpenAIClient
             data["style"] = "natural";
         }
 
+        var image = new Image { 
+            UserId = 1, 
+            ImagePromptText = imageRequest.ImagePromptText, 
+            Model = imageRequest.Model, 
+            Size = imageRequest.Size, 
+            Style = imageRequest.Style.GetValueOrDefault(), 
+            Hd = imageRequest.Hd.GetValueOrDefault(), 
+            TimeStamp = DateTime.Now 
+        };
+
         var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync(url, content);
 
         if (response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadAsStringAsync();
+            
+            // await?
+            //image.Base64String = result;
+            var resultObject = JsonConvert.DeserializeObject<dynamic>(result);
+            image.Base64String = resultObject["data"][0]["b64_json"].ToString();    
+            _context.Images.Add(image);
+            _context.SaveChanges();
+            
             return new OkObjectResult(result);
         }
         else
         {
+            image.Base64String = "failed query";
+            _context.Images.Add(image);
+            _context.SaveChanges();
+
             throw new Exception($"Error calling OpenAI API: {response.StatusCode}");
         }
+
+        // var userImages = context.Images.Where(i => i.UserId == user.Id).ToList();
     }
 }

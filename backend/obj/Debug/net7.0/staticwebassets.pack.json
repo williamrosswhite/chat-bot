@@ -5,6 +5,10 @@
       "PackagePath": "staticwebassets\\css\\app.0c264b89.css"
     },
     {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\css\\app.afbaba5e.css",
+      "PackagePath": "staticwebassets\\css\\app.afbaba5e.css"
+    },
+    {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\css\\app.b32cc245.css",
       "PackagePath": "staticwebassets\\css\\app.b32cc245.css"
     },
@@ -23,6 +27,14 @@
     {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\index.html",
       "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.10ac69f7.js",
+      "PackagePath": "staticwebassets\\js\\app.10ac69f7.js"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.10ac69f7.js.map",
+      "PackagePath": "staticwebassets\\js\\app.10ac69f7.js.map"
     },
     {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.1369cc1f.js",
@@ -97,12 +109,28 @@
       "PackagePath": "staticwebassets\\js\\app.b625fa9e.js.map"
     },
     {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.d2ba0ffb.js",
+      "PackagePath": "staticwebassets\\js\\app.d2ba0ffb.js"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\app.d2ba0ffb.js.map",
+      "PackagePath": "staticwebassets\\js\\app.d2ba0ffb.js.map"
+    },
+    {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\chunk-vendors.0941cfe3.js",
       "PackagePath": "staticwebassets\\js\\chunk-vendors.0941cfe3.js"
     },
     {
       "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\chunk-vendors.0941cfe3.js.map",
       "PackagePath": "staticwebassets\\js\\chunk-vendors.0941cfe3.js.map"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\chunk-vendors.4d417f9f.js",
+      "PackagePath": "staticwebassets\\js\\chunk-vendors.4d417f9f.js"
+    },
+    {
+      "Id": "C:\\Users\\Ross\\OneDrive\\Projects\\chatbot\\backend\\wwwroot\\js\\chunk-vendors.4d417f9f.js.map",
+      "PackagePath": "staticwebassets\\js\\chunk-vendors.4d417f9f.js.map"
     },
     {
       "Id": "obj\\Debug\\net7.0\\staticwebassets\\msbuild.backend.Microsoft.AspNetCore.StaticWebAssets.props",

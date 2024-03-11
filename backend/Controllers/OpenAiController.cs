@@ -8,6 +8,13 @@ namespace backend.Controllers;
 [ApiController]
 public class YourController : ControllerBase
 {
+    private readonly ChatbotDBContext _context;
+
+    public YourController(ChatbotDBContext context)
+    {
+        _context = context;
+    }
+    
     public class MyModel
     {
         public string? MyVariable { get; set; }
@@ -34,7 +41,7 @@ public class YourController : ControllerBase
         if (chatRequest != null) // Add null check for chatRequest
         {
             // TODO: replace this with a proper class instance of OpenAIClient
-            var response = await new OpenAIClient { }.ProcessChatPrompt(chatRequest);
+            var response = await new OpenAIClient(_context) { }.ProcessChatPrompt(chatRequest);
             return Ok(response);
         }
         else
@@ -57,7 +64,7 @@ public class YourController : ControllerBase
         if(imageRequest != null && imageRequest.ImagePromptText != null) {
 
             // TODO: replace this with a proper class instance of OpenAIClient
-            var openAIClient = new OpenAIClient();
+            var openAIClient = new OpenAIClient(_context);
             var result = await openAIClient.ProcessImagePrompt(imageRequest);
 
             if (result != null)

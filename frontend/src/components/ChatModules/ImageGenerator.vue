@@ -118,7 +118,7 @@
         })
         .catch(error => {
           console.error('Error processing image prompt:', error);
-          alert('Error processing image prompt, try again!');
+          alert('Error processing image prompt, try again!  (You may have tripped the content moderation)');
           this.isLoading = false;
         })
       }
