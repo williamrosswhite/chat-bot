@@ -41,6 +41,7 @@ This is just a demo project for me to learn things while I'm on the bench at wor
 
 ```
 - create an image generation service on my page
+    - i have successfully tied into open ai's image generator, a next step would be to tie in to stable diffusion instead to avoid image censorship
 - create a login
 - implement a database to save user's activity
 - after that, I will focus on either learning more Vue in making a more interesting UI interface, or learning more about OpenAI prompt engineering

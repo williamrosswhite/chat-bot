@@ -1,16 +1,21 @@
 <template>
   <div id="app">
+    <ImageGenerator />
+    <br><br>
     <TextChat />
+    <br>
   </div>
 </template>
 
 <script>
 import TextChat from './ChatModules/TextChat.vue'
+import ImageGenerator from './ChatModules/ImageGenerator.vue'
 
 export default {
   name: 'App',
   components: {
-    TextChat
+    TextChat,
+    ImageGenerator
   }
 }
 </script>
