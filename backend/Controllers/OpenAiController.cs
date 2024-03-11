@@ -47,10 +47,15 @@ public class YourController : ControllerBase
     [HttpPost("ImageRequest")]
     public async Task<IActionResult> ImageRequest([FromBody] ImageRequest imageRequest)
     {
-        Console.WriteLine("imageRequest: " + imageRequest);
-        Console.WriteLine("imagePromptText received: " + imageRequest.imagePromptText);
+        Console.WriteLine($"Processing Request: " +
+            $"prompt text: {imageRequest.ImagePromptText}, " +
+            $"model: {imageRequest.Model}, " +
+            $"size: {imageRequest.Size}, " +
+            $"natural style: {imageRequest.Style}, " +
+            $"hd: {imageRequest.Hd}");
 
-        if(imageRequest != null && imageRequest.imagePromptText != null) {
+        if(imageRequest != null && imageRequest.ImagePromptText != null) {
+
             // TODO: replace this with a proper class instance of OpenAIClient
             var openAIClient = new OpenAIClient();
             var result = await openAIClient.ProcessImagePrompt(imageRequest);

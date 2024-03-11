@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <ImageGenerator />
-    <br><br>
+    <hr>
     <TextChat />
     <br>
   </div>

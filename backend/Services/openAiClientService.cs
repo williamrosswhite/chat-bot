@@ -45,14 +45,22 @@ public class OpenAIClient
     public async Task<IActionResult> ProcessImagePrompt(ImageRequest imageRequest)
     {
         var url = "v1/images/generations";
-        var data = new
+
+        var data = new Dictionary<string, object>
         {
-            model = "dall-e-2",
-            prompt = imageRequest.imagePromptText,
-            n = 1,
-            size = "1024x1024",
-            response_format = "b64_json"
+            { "model", imageRequest.Model },
+            { "prompt", imageRequest.ImagePromptText },
+            { "size", imageRequest.Size },
+            { "response_format", "b64_json" }
         };
+
+        if(imageRequest.Hd == true) {
+            data["quality"] = "hd";
+        }
+
+        if(imageRequest.Style == true) {
+            data["style"] = "natural";
+        }
 
         var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync(url, content);
