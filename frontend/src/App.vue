@@ -1,16 +1,13 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <ChatBot msg="Welcome to Your Vue.js App"/>
+  <div id="app">
+    <img alt="Vue logo" src="./assets/logo.png">
+    <router-view></router-view>
+  </div>
 </template>
 
 <script>
-import ChatBot from './components/ChatBot.vue'
-
 export default {
   name: 'App',
-  components: {
-    ChatBot
-  }
 }
 </script>
 

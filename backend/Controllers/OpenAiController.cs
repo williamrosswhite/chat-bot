@@ -1,6 +1,9 @@
 using System;
 using Microsoft.AspNetCore.Mvc;
 using OpenAI.Chat;
+using backend.Models;
+using backend.Migrations;
+using backend.Controllers;
 
 namespace backend.Controllers;
 
@@ -9,10 +12,12 @@ namespace backend.Controllers;
 public class YourController : ControllerBase
 {
     private readonly ChatbotDBContext _context;
+    private readonly OpenAIClient _openAIClient;
 
-    public YourController(ChatbotDBContext context)
+    public YourController(ChatbotDBContext context, OpenAIClient openAIClient)
     {
         _context = context;
+        _openAIClient = openAIClient;
     }
     
     public class MyModel
@@ -41,7 +46,7 @@ public class YourController : ControllerBase
         if (chatRequest != null) // Add null check for chatRequest
         {
             // TODO: replace this with a proper class instance of OpenAIClient
-            var response = await new OpenAIClient(_context) { }.ProcessChatPrompt(chatRequest);
+            var response = await _openAIClient.ProcessChatPrompt(chatRequest);
             return Ok(response);
         }
         else
@@ -63,9 +68,7 @@ public class YourController : ControllerBase
 
         if(imageRequest != null && imageRequest.ImagePromptText != null) {
 
-            // TODO: replace this with a proper class instance of OpenAIClient
-            var openAIClient = new OpenAIClient(_context);
-            var result = await openAIClient.ProcessImagePrompt(imageRequest);
+            var result = await _openAIClient.ProcessImagePrompt(imageRequest);
 
             if (result != null)
             {

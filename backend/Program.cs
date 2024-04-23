@@ -1,5 +1,6 @@
 using backend;
 using Microsoft.EntityFrameworkCore;
+using Azure.Storage.Blobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,8 +9,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Could not find a connection string named 'DefaultConnection'.");
+}
+
 builder.Services.AddDbContext<ChatbotDBContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+    options.UseSqlServer(connectionString,
         sqlServerOptionsAction: sqlOptions =>
         {
             sqlOptions.EnableRetryOnFailure(
@@ -17,6 +24,12 @@ builder.Services.AddDbContext<ChatbotDBContext>(options =>
                 maxRetryDelay: TimeSpan.FromSeconds(30),
                 errorNumbersToAdd: null);
         }));
+
+// Add BlobServiceClient to the services
+builder.Services.AddSingleton(x => new BlobServiceClient(builder.Configuration.GetConnectionString("AzureBlobStorage")));
+
+// Register OpenAIClient service
+builder.Services.AddScoped<OpenAIClient>();
 
 var app = builder.Build();
 

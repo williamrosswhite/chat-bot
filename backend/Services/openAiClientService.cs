@@ -1,18 +1,18 @@
-using System;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 using backend;
-using OpenAI.Chat;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using backend.Models;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 public class OpenAIClient
 {
     private readonly ChatbotDBContext _context;
     private readonly HttpClient _httpClient;
+    private readonly BlobServiceClient _blobServiceClient;
 
-    public OpenAIClient(ChatbotDBContext context)
+    public OpenAIClient(ChatbotDBContext context, BlobServiceClient blobServiceClient)
     {
         _context = context;
         _httpClient = new HttpClient
@@ -20,6 +20,8 @@ public class OpenAIClient
             BaseAddress = new Uri("https://api.openai.com/")
         };
         _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "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");
+        _blobServiceClient = blobServiceClient;
+
     }
 
     public async Task<string> ProcessChatPrompt(backend.ChatRequest chatRequest)
@@ -47,6 +49,11 @@ public class OpenAIClient
     public async Task<IActionResult> ProcessImagePrompt(ImageRequest imageRequest)
     {
         var url = "v1/images/generations";
+
+        if (imageRequest.Model == null || imageRequest.ImagePromptText == null || imageRequest.Size == null)
+        {
+            throw new InvalidOperationException("One or more required properties are null.");
+        }
 
         var data = new Dictionary<string, object>
         {
@@ -81,24 +88,81 @@ public class OpenAIClient
         {
             var result = await response.Content.ReadAsStringAsync();
             
-            // await?
-            //image.Base64String = result;
             var resultObject = JsonConvert.DeserializeObject<dynamic>(result);
-            image.Base64String = resultObject["data"][0]["b64_json"].ToString();    
+
+            #nullable disable
+            var base64String = resultObject["data"]?[0]?["b64_json"]?.ToString();
+            #nullable enable
+
+            if (base64String == null)
+            {
+                throw new InvalidOperationException("Could not find 'b64_json' in the response.");
+            }
+
+            var imageUrl = await UploadBlobImage(base64String);
+
+            image.ImageUrl = imageUrl;
             _context.Images.Add(image);
             _context.SaveChanges();
+
             
             return new OkObjectResult(result);
         }
         else
         {
-            image.Base64String = "failed query";
+            image.ImageUrl = "failed query";
             _context.Images.Add(image);
             _context.SaveChanges();
 
             throw new Exception($"Error calling OpenAI API: {response.StatusCode}");
         }
+    }
 
-        // var userImages = context.Images.Where(i => i.UserId == user.Id).ToList();
+    private async Task<string> UploadBlobImage(string base64String) 
+    {
+        // Convert base64 string to byte array
+        byte[] imageBytes = Convert.FromBase64String(base64String);
+
+        // Create the container and return a container client object
+        BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
+
+        // Create a local file in the ./data/ directory for uploading and downloading
+        string localPath = "./data/";
+        string fileName = Guid.NewGuid().ToString(); // Generate a new name for the image
+        string localFilePath = Path.Combine(localPath, fileName);
+
+        /*      For when i have a user
+        // Create a local file in the ./data/ directory for uploading and downloading
+        string localPath = "./data/";
+        string userId = "someUserId"; // Replace this with the actual user ID
+        string fileName = $"users/{userId}/{Guid.NewGuid()}"; // Generate a new name for the image
+        string localFilePath = Path.Combine(localPath, fileName);
+        */
+
+        // Write the blob to a file
+        await File.WriteAllBytesAsync(localFilePath, imageBytes);
+
+        // Get a reference to a blob
+        BlobClient blobClient = containerClient.GetBlobClient(fileName);
+
+        // Open the file and upload its data
+        using FileStream uploadFileStream = File.OpenRead(localFilePath);
+        Dictionary<string, string> metadata = new Dictionary<string, string>
+        {
+            { "UploadDate", DateTime.UtcNow.ToString() },
+            { "UserId", "userId" } // Replace this with the actual user ID
+        };
+        BlobUploadOptions uploadOptions = new BlobUploadOptions 
+        { 
+            Metadata = metadata
+        };
+        await blobClient.UploadAsync(uploadFileStream, uploadOptions);
+        uploadFileStream.Close();
+
+        // Delete the local file
+        File.Delete(localFilePath);
+
+        // Return the URL of the uploaded blob
+        return blobClient.Uri.AbsoluteUri;
     }
 }

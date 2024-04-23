@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using backend.Models;
 
 namespace backend
 {
@@ -9,11 +10,14 @@ namespace backend
         {
         }
 
+        #nullable disable
+        
         public DbSet<Image> Images { get; set; }
 
         public DbSet<Message> Messages { get; set; }
 
         public DbSet<User> Users { get; set; }
-
+        
+        #nullable enable
     }
 }

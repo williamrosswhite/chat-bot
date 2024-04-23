@@ -20,7 +20,7 @@ This is just a demo project for me to learn things while I'm on the bench at wor
 - navigate to ./chatbot/backend in one of them
 - run `dotnet watch run` for hot reload 
     - or to debug, open Visual Studio debugger and select 'Development (http)' configuration and then launch debugger
-    - backendw will launch a swagger tab at http://localhost/5111
+    - backend will launch a swagger tab at http://localhost/5111
 - in the other terminal/window, navigate to ./chatbot/frontend
 - run `npm run serve`
 - browser will launch to application at http://localhost:5112/
@@ -46,4 +46,10 @@ This is just a demo project for me to learn things while I'm on the bench at wor
 - implement a database to save user's activity
 - after that, I will focus on either learning more Vue in making a more interesting UI interface, or learning more about OpenAI prompt engineering
 - whichever I focus on first, the other will come after
+```
+
+### To Do
+
+```
+- properly configure .gitignore
 ```
