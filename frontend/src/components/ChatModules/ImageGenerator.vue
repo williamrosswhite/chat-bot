@@ -4,51 +4,63 @@
   </div>
   <p v-show="isLoading">Processing...</p>
   <br>
-  <div>
-    <textarea 
+  <p>Describe what you'd like to see...</p>
+  <div class="text-area option-container">
+    <b-form-textarea
       v-model="userImagePromptText" 
       @keydown.enter="processImagePrompt" 
       @keydown.enter.prevent 
-      placeholder="Describe and image you'd like to see...">
-    </textarea>
+      placeholder="2 character minimum"
+      no-auto-shrink
+    ></b-form-textarea>
   </div>
   <div class="selectors">
-    <div class="generationOption">
-      <label for="model">Model:</label>
-      <select v-model="model">
-        <option value="dall-e-2">dall-e-2</option>
-        <option value="dall-e-3">dall-e-3</option>
-        <option value="stable-diffusion">Stable Diffusion</option>
-      </select>
+    <div class="option-container">
+      <label for="model" class="label">Model:</label>
+      <b-form-select v-model="model" :options="modelOptions" class="select"></b-form-select>
     </div>
-    <div class="generationOption" v-if="model === 'dall-e-3' || model === 'dall-e-2'">      
-      <label for="size">Image size:</label>
-      <select v-model="size">
-        <option v-for="option in sizeOptions" :value="option.value" :key="option.value">
-          {{ option.text }}
-        </option>
-      </select>
+    <div class="option-container">
+      <label for="size" class="label">Image size:</label>
+      <b-form-select v-model="size" :options="sizeOptions"></b-form-select>
     </div>
     <div class="generationOption" v-if="model === 'dall-e-3'">
-      <label for="style">Style:</label>
-      <input type="radio" id="natural" value="natural" v-model="style">
-      <label for="natural">Natural</label>
-      <input type="radio" id="vivid" value="vivid" v-model="style">
+      <label for="style" class="label">Style:</label>
+      <input type="radio" id="natural" value="natural" v-model="style" class="radio-button">
+      <label for="natural" class="label">Natural</label>
+      <input type="radio" id="vivid" value="vivid" v-model="style" class="radio-button">
       <label for="vivid">Vivid</label>
     </div>
-    <div class="generationOption" v-if="model === 'dall-e-3'">
-      <label for="hd">HD:</label>
-      <input type="checkbox" id="hd" v-model="hd">
+    <div class="checkbox-container">
+      <div class="generationOption" v-if="model === 'dall-e-3' || model === 'stable-diffusion'">
+        <label for="hd" class="radio-button">HD:</label>
+        <input type="checkbox" id="hd" v-model="hd">
+      </div>
+      <div class="generationOption" v-if="model === 'stable-diffusion'">
+        <label for="panorama" class="radio-button">Panorama:</label>
+        <input type="checkbox" id="panorama" v-model="panorama">
+      </div>
     </div>
   </div>
-  <div>
-    <button :disabled="isLoading" @click="processImagePrompt">Process Image Prompt</button>
+  <div id="warning-banner" v-show="model === 'stable-diffusion'" class="alert alert-warning" role="alert">
+    Warning: Stable Diffusion can produce NSFW Images
   </div>
+  <div class="generationOption slider-component" v-if="model === 'stable-diffusion'">
+    <label for="slider" class="label">Select a number:</label>
+    <input type="range" id="slider" v-model.number="guidanceScale" min="1" max="20">
+    <span class="slider-value">{{ guidanceScale }}</span>
+  </div>
+  <div class="option-container" v-if="model === 'stable-diffusion'">
+    <label for="denoisingSteps" class="label bottom-element">Denoising Steps:</label>
+    <b-form-select v-model="denoisingSteps" :options="denoisingStepsOptions" class="select"></b-form-select>
+  </div>
+  <div>
+    <b-button pill variant="success" :disabled="isButtonDisabled" @click="processImagePrompt" class="process-image-button">Process Image Prompt</b-button>  </div>
 </template>
   
 <script>
-  import axios from 'axios';
-  
+  import ImageGeneratorService from '@/services/ImageGeneratorService';
+  import { BFormSelect, BButton, BFormTextarea } from 'bootstrap-vue-3'
+
   export default {
     data() {
       return {
@@ -58,7 +70,10 @@
         model: 'dall-e-2',
         size: '256x256',
         hd: false,
-        style: 'natural'
+        style: 'natural',
+        guidanceScale: 1, // initial value for the slider
+        panorama: false,
+        denoisingSteps: '0', // default value for the denoising steps
       };
     },
     computed: {
@@ -76,9 +91,34 @@
             { value: '1792x1024', text: '1792x1024' },
             { value: '1024x1792', text: '1024x1792' }
           ];
+        } else if (this.model === 'stable-diffusion') {
+          return [
+            { value: '256x256', text: '256x256' },
+            { value: '512x512', text: '512x512' },
+            commonOption
+          ];
         }
         return [];
-      }
+      },
+      denoisingStepsOptions() {
+        return [
+            { value: '0', text: '0' },
+            { value: '21', text: '21' },
+            { value: '31', text: '31' },
+            { value: '41', text: '41' },
+            { value: '51', text: '51' }
+        ];
+      },
+      modelOptions() {
+        return [
+          { value: 'dall-e-2', text: 'dall-e-2' },
+          { value: 'dall-e-3', text: 'dall-e-3' },
+          { value: 'stable-diffusion', text: 'Stable Diffusion' }
+        ];
+      },
+      isButtonDisabled() {
+        return this.isLoading || this.userImagePromptText.length < 2;
+      },
     },
     watch: {
       model(newModel) {
@@ -97,65 +137,34 @@
         if(this.model === 'dall-e-3' || this.model === 'dall-e-2') {
           this.isLoading = true;
           console.log('sending...', this.userImagePromptText);
-          axios.post(`${process.env.VUE_APP_API_URL}/openapi/ImageRequest`, { 
-            imagePromptText: this.userImagePromptText,
-            model: this.model,
-            size: this.size,
-            style: this.style === 'natural' ? true : false,      
-            hd: this.hd
-          })
-          .then(response => {
-            if(response.data.error?.code === "rate_limit_exceeded") {
-              alert('Whoops!  Too eager dude!\nRequests per minute limit exceeded, give it a second to cool down.')
-            } else {
-              let base64Image = response.data.data[0]?.b64_json;
-              if(base64Image != undefined) {
-                console.log(`Displaying returned image for: ${this.userImagePromptText}`);          
-                this.imageUrls.push(`data:image/jpeg;base64,${base64Image}`);
-              } else {
-                alert('Image generation failed, try again!');
-              }
-            }
-            this.isLoading = false;
-          })
-          .catch(error => {
-            console.error('Error processing image prompt:', error);
-            alert('Error processing image prompt, try again!  (You may have tripped the content moderation)');
-            this.isLoading = false;
-          })
+          ImageGeneratorService.processImagePromptOpenAi(this.userImagePromptText, this.model, this.size, this.style, this.hd)
+            .then(imageUrl => {
+              this.imageUrls.push(imageUrl);
+              this.isLoading = false;
+            })
+            .catch(error => {
+              alert(error.message);
+              this.isLoading = false;
+            });
         } else if (this.model === 'stable-diffusion') {
           this.isLoading = true;
           console.log('sending...', this.userImagePromptText);
-          axios.post(`${process.env.VUE_APP_API_URL}/stablediffusion/ImageRequest`, { 
-            imagePromptText: this.userImagePromptText,
-            model: this.model,
-            size: this.size,
-            style: this.style === 'natural' ? true : false,      
-            hd: this.hd
-          })
-          .then(response => {
-            if(response.data.error?.code === "rate_limit_exceeded") {
-              alert('Whoops!  Too eager dude!\nRequests per minute limit exceeded, give it a second to cool down.')
-            } else {
-              console.log(response)
-              this.imageUrls.push(response.data?.output[0]);
-              // let base64Image = response.data.data[0]?.b64_json;
-              // if(base64Image != undefined) {
-              //   console.log(`Displaying returned image for: ${this.userImagePromptText}`);          
-              //   this.imageUrls.push(`data:image/jpeg;base64,${base64Image}`);
-              // } else {
-              //   alert('Image generation failed, try again!');
-              // }
-            }
-            this.isLoading = false;
-          })
-          .catch(error => {
-            console.error('Error processing image prompt:', error);
-            alert('Error processing image prompt, try again!  (You may have tripped the content moderation)');
-            this.isLoading = false;
-          })
+          ImageGeneratorService.processImagePromptStableDiffusion(this.userImagePromptText, this.size, this.hd, this.guidanceScale, this.panorama)
+            .then(imageUrl => {
+              this.imageUrls.push(imageUrl);
+              this.isLoading = false;
+            })
+            .catch(error => {
+              alert(error.message);
+              this.isLoading = false;
+            });
         }
       }
-    }
+    },
+    components: {
+      BFormSelect,
+      BButton,
+      BFormTextarea
+    }    
   };
 </script>

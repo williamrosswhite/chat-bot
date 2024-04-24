@@ -3,33 +3,40 @@
     <div v-for="(message, index) in history" :key="index">
       <p :class="message.role">{{ message.content }}</p>
     </div>
-  </div>
-  <div>
-    <textarea 
+  </div>    
+  <p>Enter a text prompt:</p>
+  <div class="text-area option-container">
+    <b-form-textarea
       v-model="userPromptText" 
       @keydown.enter="processPrompt" 
       @keydown.enter.prevent 
-      placeholder="Enter something...">
-    </textarea>
+      placeholder="2 character minimum"
+      no-auto-shrink
+    ></b-form-textarea>
   </div>
+  <br/>
   <div>
-    <button @click="processPrompt">Process Prompt</button>
+    <b-button pill variant="success" :disabled="isButtonDisabled" @click="processPrompt" class="process-image-button">Process Prompt</b-button>
   </div>
 </template>
   
   <script>
   import axios from 'axios';
   import { toRaw } from 'vue';
+  import { BButton, BFormTextarea } from 'bootstrap-vue-3'
   
   export default {
     data() {
       return {
+        isLoading: false,
+        userPromptText: '',
         promptResponse: '',
         history: []
       }
     },
     methods: {
       processPrompt() {
+        this.isLoading = true;
         this.history.push({ role: 'user', content: this.userPromptText });
         let historyArray = toRaw(this.history);
         axios.post(`${process.env.VUE_APP_API_URL}/api/ChatRequest`, { 
@@ -46,10 +53,19 @@
             this.promptResponse = extractedResponse.content;
             this.userPromptText = '';
           }
-
+          this.isLoading = false;
         })
         .catch(error => console.error(error));
       }
-    }
+    },
+    computed: {
+      isButtonDisabled() {
+        return this.isLoading || this.userPromptText.length < 2;
+      }
+    },
+    components: {
+      BButton,
+      BFormTextarea
+    }    
   }
   </script>

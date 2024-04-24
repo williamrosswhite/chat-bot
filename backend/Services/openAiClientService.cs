@@ -106,7 +106,7 @@ public class OpenAIClient
         }
         else
         {
-            image.BlobName = null;
+            image.BlobName = "BlobFailure";
             _context.Images.Add(image);
             _context.SaveChanges();
 
