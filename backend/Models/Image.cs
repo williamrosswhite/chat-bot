@@ -15,7 +15,7 @@ namespace backend.Models
 
         public bool Hd { get; set; }  
 
-        public string? ImageUrl { get; set; }
+        public string? BlobName { get; set; }
 
         public DateTime TimeStamp { get; set; }
 

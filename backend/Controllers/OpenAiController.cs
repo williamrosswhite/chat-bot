@@ -7,22 +7,15 @@ using backend.Controllers;
 
 namespace backend.Controllers;
 
-[Route("api")]
+[Route("openapi")]
 [ApiController]
-public class YourController : ControllerBase
+public class OpenAiController : ControllerBase
 {
-    private readonly ChatbotDBContext _context;
     private readonly OpenAIClient _openAIClient;
 
-    public YourController(ChatbotDBContext context, OpenAIClient openAIClient)
+    public OpenAiController(OpenAIClient openAIClient)
     {
-        _context = context;
         _openAIClient = openAIClient;
-    }
-    
-    public class MyModel
-    {
-        public string? MyVariable { get; set; }
     }
 
     [HttpPost("ChatRequest")]
@@ -45,7 +38,6 @@ public class YourController : ControllerBase
 
         if (chatRequest != null) // Add null check for chatRequest
         {
-            // TODO: replace this with a proper class instance of OpenAIClient
             var response = await _openAIClient.ProcessChatPrompt(chatRequest);
             return Ok(response);
         }

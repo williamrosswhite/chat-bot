@@ -7,22 +7,30 @@ namespace backend.Controllers
     [ApiController]
     public class DbAccessController : ControllerBase
     {
-        private readonly ChatbotDBContext _context;
+        private readonly ImageService _imageService;
 
-        public DbAccessController(ChatbotDBContext context)
+        public DbAccessController(ImageService imageService)
         {
-            _context = context;
+            _imageService = imageService;
         }
-
-        // Existing code...
 
         [HttpGet("images")]
         public async Task<IActionResult> GetImages()
         {
             Console.WriteLine("Getting images...");
-            var images = await _context.Images.ToListAsync(); // replace 'Images' with the actual name of your DbSet
+            var imageUrls = await _imageService.GetImageUrlsAsync();
 
-            return Ok(images);
+            Response.Headers.Add("Cache-Control", "no-store");
+            return Ok(imageUrls);
         }
+
+        // [HttpGet("decodeAndStore")]
+        // public async Task<IActionResult> DecodeAndStore()
+        // {
+        //     Console.WriteLine("Getting images...");
+        //     await _imageService.DecodeAndStoreImages();
+
+        //     return Ok();
+        // }
     }
 }

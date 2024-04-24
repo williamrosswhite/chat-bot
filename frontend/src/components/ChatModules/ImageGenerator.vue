@@ -18,9 +18,10 @@
       <select v-model="model">
         <option value="dall-e-2">dall-e-2</option>
         <option value="dall-e-3">dall-e-3</option>
+        <option value="stable-diffusion">Stable Diffusion</option>
       </select>
     </div>
-    <div class="generationOption">
+    <div class="generationOption" v-if="model === 'dall-e-3' || model === 'dall-e-2'">      
       <label for="size">Image size:</label>
       <select v-model="size">
         <option v-for="option in sizeOptions" :value="option.value" :key="option.value">
@@ -93,34 +94,67 @@
     },
     methods: {
       processImagePrompt() {
-        this.isLoading = true;
-        console.log('sending...', this.userImagePromptText);
-        axios.post(`${process.env.VUE_APP_API_URL}/api/ImageRequest`, { 
-          imagePromptText: this.userImagePromptText,
-          model: this.model,
-          size: this.size,
-          style: this.style === 'natural' ? true : false,      
-          hd: this.hd
-        })
-        .then(response => {
-          if(response.data.error?.code === "rate_limit_exceeded") {
-            alert('Whoops!  Too eager dude!\nRequests per minute limit exceeded, give it a second to cool down.')
-          } else {
-            let base64Image = response.data.data[0]?.b64_json;
-            if(base64Image != undefined) {
-              console.log(`Displaying returned image for: ${this.userImagePromptText}`);          
-              this.imageUrls.push(`data:image/jpeg;base64,${base64Image}`);
+        if(this.model === 'dall-e-3' || this.model === 'dall-e-2') {
+          this.isLoading = true;
+          console.log('sending...', this.userImagePromptText);
+          axios.post(`${process.env.VUE_APP_API_URL}/openapi/ImageRequest`, { 
+            imagePromptText: this.userImagePromptText,
+            model: this.model,
+            size: this.size,
+            style: this.style === 'natural' ? true : false,      
+            hd: this.hd
+          })
+          .then(response => {
+            if(response.data.error?.code === "rate_limit_exceeded") {
+              alert('Whoops!  Too eager dude!\nRequests per minute limit exceeded, give it a second to cool down.')
             } else {
-              alert('Image generation failed, try again!');
+              let base64Image = response.data.data[0]?.b64_json;
+              if(base64Image != undefined) {
+                console.log(`Displaying returned image for: ${this.userImagePromptText}`);          
+                this.imageUrls.push(`data:image/jpeg;base64,${base64Image}`);
+              } else {
+                alert('Image generation failed, try again!');
+              }
             }
-          }
-          this.isLoading = false;
-        })
-        .catch(error => {
-          console.error('Error processing image prompt:', error);
-          alert('Error processing image prompt, try again!  (You may have tripped the content moderation)');
-          this.isLoading = false;
-        })
+            this.isLoading = false;
+          })
+          .catch(error => {
+            console.error('Error processing image prompt:', error);
+            alert('Error processing image prompt, try again!  (You may have tripped the content moderation)');
+            this.isLoading = false;
+          })
+        } else if (this.model === 'stable-diffusion') {
+          this.isLoading = true;
+          console.log('sending...', this.userImagePromptText);
+          axios.post(`${process.env.VUE_APP_API_URL}/stablediffusion/ImageRequest`, { 
+            imagePromptText: this.userImagePromptText,
+            model: this.model,
+            size: this.size,
+            style: this.style === 'natural' ? true : false,      
+            hd: this.hd
+          })
+          .then(response => {
+            if(response.data.error?.code === "rate_limit_exceeded") {
+              alert('Whoops!  Too eager dude!\nRequests per minute limit exceeded, give it a second to cool down.')
+            } else {
+              console.log(response)
+              this.imageUrls.push(response.data?.output[0]);
+              // let base64Image = response.data.data[0]?.b64_json;
+              // if(base64Image != undefined) {
+              //   console.log(`Displaying returned image for: ${this.userImagePromptText}`);          
+              //   this.imageUrls.push(`data:image/jpeg;base64,${base64Image}`);
+              // } else {
+              //   alert('Image generation failed, try again!');
+              // }
+            }
+            this.isLoading = false;
+          })
+          .catch(error => {
+            console.error('Error processing image prompt:', error);
+            alert('Error processing image prompt, try again!  (You may have tripped the content moderation)');
+            this.isLoading = false;
+          })
+        }
       }
     }
   };

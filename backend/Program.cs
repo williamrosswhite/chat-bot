@@ -1,6 +1,9 @@
 using backend;
 using Microsoft.EntityFrameworkCore;
 using Azure.Storage.Blobs;
+using dotenv.net;
+
+DotEnv.Config(new DotEnvOptions());
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +33,12 @@ builder.Services.AddSingleton(x => new BlobServiceClient(builder.Configuration.G
 
 // Register OpenAIClient service
 builder.Services.AddScoped<OpenAIClient>();
+
+// Register OpenAIClient service
+builder.Services.AddScoped<StableDiffusionClient>();
+
+// Register ImageService
+builder.Services.AddScoped<ImageService>();
 
 var app = builder.Build();
 

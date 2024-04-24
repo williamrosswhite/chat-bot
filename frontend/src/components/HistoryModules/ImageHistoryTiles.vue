@@ -1,10 +1,9 @@
 <template>
-  <div></div>
+  <p>wubbalubbadubdub</p>
 </template>
 
 <script>
 export default {
-  name: 'ImageHistoryTiles',
-  props: ['image', 'isActive']
+  name: 'ImageHistoryTiles'
 }
 </script>
