@@ -48,7 +48,7 @@ a {
   padding-bottom: 20px; 
 }
 
-.generationOption {
+.generation-option {
   padding-top: 10px;
   margin-bottom: 10px; 
 }
@@ -95,6 +95,10 @@ a {
 
 .bottom-element {
   margin-bottom: 25px;
+}
+
+.seed {
+  padding-top: 40px;
 }
 
 #warning-banner {

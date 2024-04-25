@@ -30,7 +30,8 @@ public class StableDiffusionController : ControllerBase
             $"\nhd: {imageRequest.Hd}" +
             $"\nguidance scale: {imageRequest.GuidanceScale}" +
             $"\nsamples: {imageRequest.Samples}" +
-            $"\nsamples: {imageRequest.InferenceDenoisingSteps}"
+            $"\nseed: {imageRequest.Seed}" +
+            $"\ninference denoising steps: {imageRequest.InferenceDenoisingSteps}"
         );
 
         if(imageRequest != null && imageRequest.ImagePromptText != null) {

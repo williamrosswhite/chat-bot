@@ -47,7 +47,8 @@ public class StableDiffusionClient
             enhance_style = imageRequest.Hd == true ? "yes" : "no",
             num_inference_steps = 51,
             self_attention = "yes",
-            guidance_scale = imageRequest.GuidanceScale.ToString(), 
+            guidance_scale = imageRequest.GuidanceScale.ToString(),
+            seed = imageRequest.Seed
         };
 
         Console.WriteLine("data: " + data);
@@ -120,7 +121,18 @@ public class StableDiffusionClient
 
                 _context.SaveChanges();
 
-                return new OkObjectResult(result);
+                // Create a new object that includes both jsonResponse.output and jsonResponse.meta
+                var returnObject = new
+                {
+                    output = jsonResponse.output,
+                    seed = jsonResponse.meta.seed
+                };
+
+                // Convert the object to a JSON string
+                string returnJson = JsonConvert.SerializeObject(returnObject);
+
+                // Return the JSON string
+                return new OkObjectResult(returnJson);
             }
             catch(Exception e) {
                 throw new Exception($"Error calling Stable Diffusion API: {response.StatusCode}, Exception: {e.Message}");

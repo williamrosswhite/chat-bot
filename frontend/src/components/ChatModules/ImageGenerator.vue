@@ -23,7 +23,7 @@
       <label for="size" class="label">Image size:</label>
       <b-form-select v-model="size" :options="sizeOptions"></b-form-select>
     </div>
-    <div class="generationOption" v-if="model === 'dall-e-3'">
+    <div class="generation-option" v-if="model === 'dall-e-3'">
       <label for="style" class="label">Style:</label>
       <input type="radio" id="natural" value="natural" v-model="style" class="radio-button">
       <label for="natural" class="label">Natural</label>
@@ -31,20 +31,16 @@
       <label for="vivid">Vivid</label>
     </div>
     <div class="checkbox-container">
-      <div class="generationOption" v-if="model === 'dall-e-3' || model === 'stable-diffusion'">
+      <div class="generation-option" v-if="model === 'dall-e-3' || model === 'stable-diffusion'">
         <label for="hd" class="radio-button">HD:</label>
         <input type="checkbox" id="hd" v-model="hd">
       </div>
-      <!-- <div class="generationOption" v-if="model === 'stable-diffusion'">
-        <label for="panorama" class="radio-button">Panorama:</label>
-        <input type="checkbox" id="panorama" v-model="panorama">
-      </div> -->
     </div>
   </div>
   <div id="warning-banner" v-show="model === 'stable-diffusion'" class="alert alert-warning" role="alert">
     Warning: Stable Diffusion can produce NSFW Images
   </div>
-  <div class="generationOption slider-component" v-if="model === 'stable-diffusion'">
+  <div class="generation-option slider-component" v-if="model === 'stable-diffusion'">
     <label for="slider" class="label">Guidance Scale:</label>
     <input type="range" id="slider" v-model.number="guidanceScale" min="1" max="20">
     <span class="slider-value">{{ guidanceScale }}</span>
@@ -67,11 +63,19 @@
   <div>
     <b-button pill variant="success" :disabled="isButtonDisabled" @click="processImagePrompt" class="process-image-button">Process Image Prompt</b-button>
   </div>
+  <div v-if="model === 'stable-diffusion'">
+    <div class="option-container seed">
+          <label for="seed" class="label">Seed:</label>
+          <b-form-input v-model="seed" type="text" pattern="[0-9]*"></b-form-input>
+          <b-button pill variant="outline-success" @click="clearSeed" class="process-image-button slider-value">Clear</b-button>
+    </div>
+    <p class="small denoising-info">(The same seed with the same parameters creates<br>the same image.  Leave blank to randomize)</p>
+  </div>  
 </template>
   
 <script>
   import ImageGeneratorService from '@/services/ImageGeneratorService';
-  import { BFormSelect, BButton, BFormTextarea } from 'bootstrap-vue-3'
+  import { BFormSelect, BButton, BFormTextarea, BFormInput } from 'bootstrap-vue-3'
 
   export default {
     data() {
@@ -84,9 +88,9 @@
         hd: false,
         style: 'natural',
         guidanceScale: 1, // initial value for the slider
-        // panorama: false,
         interferenceDenoisingSteps: 0, // default value for the denoising steps
-        samples: 1 // default value for the number of images to generate
+        samples: 1, // default value for the number of images to generate
+        seed: ""
       };
     },
     computed: {
@@ -111,7 +115,7 @@
             commonOption,
             { value: '512x1024', text: '512x1024 (portrait)' },
             { value: '1024x512', text: '1024x512 (landscape)' },
-            { value: '1024x461', text: '1024x461 (phone)' }
+            { value: '464x1024', text: '464x1024 (phone)' }
           ];
         }
         return [];
@@ -172,11 +176,20 @@
             });
         } else if (this.model === 'stable-diffusion') {
           this.isLoading = true;
+          console.log("seed: ", this.seed);
           console.log('sending...', this.userImagePromptText, "to Stable Diffusion");
-          ImageGeneratorService.processImagePromptStableDiffusion(this.userImagePromptText, this.size, this.hd, this.guidanceScale, this.samples, this.interferenceDenoisingSteps)
-            .then(generatedImageUrls => {
-              console.log('received response: ', generatedImageUrls);
-              this.imageUrls.push(...generatedImageUrls);
+          ImageGeneratorService.processImagePromptStableDiffusion(
+            this.userImagePromptText, 
+            this.size, 
+            this.hd, 
+            this.guidanceScale, 
+            this.samples, 
+            this.interferenceDenoisingSteps, 
+            this.seed
+          ).then(responseData => {
+              console.log('received response: ', responseData);
+              this.imageUrls.push(...responseData.output);
+              this.seed = responseData.seed;
               this.isLoading = false;
             })
             .catch(error => {
@@ -184,12 +197,16 @@
               this.isLoading = false;
             });
         }
+      },
+      clearSeed() {
+        this.seed = "";
       }
     },
     components: {
       BFormSelect,
       BButton,
-      BFormTextarea
+      BFormTextarea,
+      BFormInput
     }    
   };
 </script>

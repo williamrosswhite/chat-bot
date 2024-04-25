@@ -30,9 +30,10 @@ export default {
     }
   },
 
-  async processImagePromptStableDiffusion(userImagePromptText, size, hd, guidanceScale, samples, inferenceDenoisingSteps) {
+  async processImagePromptStableDiffusion(userImagePromptText, size, hd, guidanceScale, samples, inferenceDenoisingSteps, seed) {
     console.log("inference steps", inferenceDenoisingSteps)
     try {
+      console.log("sending seed: ", seed);
       return axios.post(`${process.env.VUE_APP_API_URL}/stablediffusion/ImageRequest`, { 
         imagePromptText: userImagePromptText,
         model: 'stable-diffusion',
@@ -41,14 +42,15 @@ export default {
         hd: hd,
         guidanceScale: guidanceScale,
         samples: samples,
-        inferenceDenoisingSteps: inferenceDenoisingSteps
+        inferenceDenoisingSteps: inferenceDenoisingSteps,
+        seed: seed || 0
       })
       .then(response => {
         if(response.data.error?.code === "rate_limit_exceeded") {
           alert('Whoops!  Too eager dude!\nRequests per minute limit exceeded, give it a second to cool down.')
         } else {
           console.log(response)
-          return response.data.output;
+          return response.data;
         }
         this.isLoading = false;
       })

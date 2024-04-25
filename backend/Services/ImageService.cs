@@ -138,7 +138,11 @@ public class ImageService
         var policy = Policy
             .Handle<HttpRequestException>()
             .OrResult<HttpResponseMessage>(message => message.StatusCode == System.Net.HttpStatusCode.NotFound)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(5, retryAttempt)),        
+                onRetry: (exception, timeSpan, retryCount, context) =>
+                {
+                    Console.WriteLine($"Retry {retryCount} encountered. Waiting {timeSpan.TotalSeconds} seconds before next attempt.");
+                });
 
         // Download the image using the policy to execute the HTTP request
         var imageResponse = await policy.ExecuteAsync(() => _httpClient.GetAsync(imageUrl));

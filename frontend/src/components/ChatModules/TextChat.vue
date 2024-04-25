@@ -39,7 +39,8 @@
         this.isLoading = true;
         this.history.push({ role: 'user', content: this.userPromptText });
         let historyArray = toRaw(this.history);
-        axios.post(`${process.env.VUE_APP_API_URL}/api/ChatRequest`, { 
+        console.log('historyArray: ', historyArray);
+        axios.post(`${process.env.VUE_APP_API_URL}/openapi/ChatRequest`, { 
           messages: historyArray,
         })
         .then(response => {
