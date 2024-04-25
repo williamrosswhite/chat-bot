@@ -56,9 +56,13 @@ public class OpenAiController : ControllerBase
             $"model: {imageRequest.Model}, " +
             $"size: {imageRequest.Size}, " +
             $"natural style: {imageRequest.Style}, " +
+            $"samples: {imageRequest.Samples}, " +
             $"hd: {imageRequest.Hd}");
 
         if(imageRequest != null && imageRequest.ImagePromptText != null) {
+
+                    Console.WriteLine("DO YOU GET HERE??");
+
 
             var result = await _openAIClient.ProcessImagePrompt(imageRequest);
 

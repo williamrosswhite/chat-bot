@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using backend;
 
@@ -11,9 +12,10 @@ using backend;
 namespace backend.Migrations
 {
     [DbContext(typeof(ChatbotDBContext))]
-    partial class ChatbotDBContextModelSnapshot : ModelSnapshot
+    [Migration("20240425002923_AddingNsfwField")]
+    partial class AddingNsfwField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -49,6 +51,9 @@ namespace backend.Migrations
                     b.Property<string>("Model")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Nsfw")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("Samples")
                         .HasColumnType("int");

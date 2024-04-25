@@ -6,15 +6,19 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
 using Newtonsoft.Json;
+using Azure;
+using Polly;
 
 public class ImageService
 {
     private readonly ChatbotDBContext _context;
+    private readonly HttpClient _httpClient;
     private readonly BlobServiceClient _blobServiceClient;
 
-    public ImageService(ChatbotDBContext context, BlobServiceClient blobServiceClient)
+    public ImageService(ChatbotDBContext context, HttpClient httpClient, BlobServiceClient blobServiceClient)
     {
         _context = context;
+        _httpClient = httpClient;
         _blobServiceClient = blobServiceClient;
     }
 
@@ -52,105 +56,113 @@ public class ImageService
         return imageUrls;
     }
 
-    internal async Task<string> UploadBlobImageFromOpenAi(string base64String, Image image) 
+    internal async Task<string> UploadBlobImageFromOpenAi(string base64String, ImageRequest imageRequest, DateTime timeStamp) 
     {
-        // Convert base64 string to byte array
-        byte[] imageBytes = Convert.FromBase64String(base64String);
+        try {
+            // Convert base64 string to byte array
+            byte[] imageBytes = Convert.FromBase64String(base64String);
+
+            // Create the container and return a container client object
+            BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
+
+            // Create a local file in the ./data/ directory for uploading and downloading
+            string localPath = "./data/";
+            string fileName = Guid.NewGuid().ToString(); // Generate a new name for the image
+            string localFilePath = Path.Combine(localPath, fileName);
+
+            // Write the blob to a file
+            await File.WriteAllBytesAsync(localFilePath, imageBytes);
+
+            // Get a reference to a blob
+            BlobClient blobClient = containerClient.GetBlobClient(fileName);
+
+            // Open the file and upload its data
+            using FileStream uploadFileStream = File.OpenRead(localFilePath);
+
+            var imageMetadata = new Dictionary<string, string>
+            {
+                { "model", imageRequest.Model },
+                { "prompt", imageRequest.ImagePromptText ?? string.Empty },
+                { "size", imageRequest.Size },
+                { "response_format", "b64_json" },
+                { "timestamp", timeStamp.ToString() }
+            };
+
+            #pragma warning disable CS8601
+            if(imageRequest != null) {
+                if (imageRequest.Samples != null)
+                {
+                    imageMetadata["n"] = imageRequest.Samples?.ToString();
+                }
+
+                if (imageRequest.Hd == true)
+                {
+                    imageMetadata["quality"] = "hd";
+                }
+
+                if (imageRequest.Style == true)
+                {
+                    imageMetadata["style"] = "natural";
+                }
+            }
+            #pragma warning restore CS8601
+
+            BlobUploadOptions uploadOptions = new BlobUploadOptions 
+            { 
+                Metadata = imageMetadata,
+                HttpHeaders = new BlobHttpHeaders
+                {
+                    ContentType = "image/png",
+                }
+            };
+
+            await blobClient.UploadAsync(uploadFileStream, uploadOptions);
+            uploadFileStream.Close();
+
+            // Delete the local file
+            File.Delete(localFilePath);
+
+            // Return the URL of the uploaded blob
+            return blobClient.Name;
+        }
+        catch (RequestFailedException e) {
+            return e.ToString();
+        }
+    }
+
+    internal async Task<string> UploadBlobImageFromStableDiffusion(string imageUrl, DateTime timeStamp) 
+    {
+        Console.WriteLine("Uploading image to blob storage...");
+
+        // Define a policy that will handle exceptions and 404 status codes
+        var policy = Policy
+            .Handle<HttpRequestException>()
+            .OrResult<HttpResponseMessage>(message => message.StatusCode == System.Net.HttpStatusCode.NotFound)
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+        // Download the image using the policy to execute the HTTP request
+        var imageResponse = await policy.ExecuteAsync(() => _httpClient.GetAsync(imageUrl));
+        Console.WriteLine("Image downloaded successfully.");
+
+        var imageBytes = await imageResponse.Content.ReadAsByteArrayAsync();
+        Console.WriteLine("Image converted to byte array successfully.");
 
         // Create the container and return a container client object
         BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
+        Console.WriteLine("Blob container client created successfully.");
 
-        // Create a local file in the ./data/ directory for uploading and downloading
-        string localPath = "./data/";
-        string fileName = Guid.NewGuid().ToString(); // Generate a new name for the image
-        string localFilePath = Path.Combine(localPath, fileName);
-
-        // Write the blob to a file
-        await File.WriteAllBytesAsync(localFilePath, imageBytes);
-
-        // Get a reference to a blob
-        BlobClient blobClient = containerClient.GetBlobClient(fileName);
-
-        // Open the file and upload its data
-        using FileStream uploadFileStream = File.OpenRead(localFilePath);
-        Dictionary<string, string> metadata = new Dictionary<string, string>
+        // Create a new blob and upload the image
+        BlobClient blobClient = containerClient.GetBlobClient(Guid.NewGuid().ToString());
+        using (var stream = new MemoryStream(imageBytes))
         {
-            { "TimeStamp", image.TimeStamp.ToString() },
-            { "UserId", image.UserId.ToString() },
-            { "ImagePromptText", image.ImagePromptText },
-            { "Model", image.Model },
-            { "Size", image.Size },
-            { "Style", image.Style.ToString() },
-            { "Hd", image.Hd.ToString() }
-        };
-        BlobUploadOptions uploadOptions = new BlobUploadOptions 
-        { 
-            Metadata = metadata,
-            HttpHeaders = new BlobHttpHeaders
-            {
-                ContentType = "image/png",
-            }
-        };
-        await blobClient.UploadAsync(uploadFileStream, uploadOptions);
-        uploadFileStream.Close();
+            await blobClient.UploadAsync(stream);
+        }
 
-        // Delete the local file
-        File.Delete(localFilePath);
+        Console.WriteLine($"Image uploaded to blob storage. Blob URL: {blobClient.Uri.AbsoluteUri}");
 
         // Return the URL of the uploaded blob
         return blobClient.Name;
     }
-
-    // internal async Task<string> UploadBlobImageFromStableDiffusion(string imageUrl, object data)
-    // {
-    //     // Create the container and return a container client object
-    //     BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
-
-    //     // Generate a new name for the image
-    //     string blobName = Guid.NewGuid().ToString();
-
-    //     // Get a reference to a blob
-    //     BlobClient blobClient = containerClient.GetBlobClient(blobName);
-
-    //     // Download the image from the URL
-    //     HttpClient httpClient = new HttpClient();
-    //     //byte[] imageBytes = await httpClient.GetByteArrayAsync(imageUrl);
-
-    //     // Deserialize it into a dictionary
-    //     var dataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(data as string);
-
-    //     // Now you can access the 'prompt' property
-    //     string prompt = dataDict["prompt"].ToString();
-
-    //     // Prepare the metadata
-    //     Dictionary<string, string> metadata = new Dictionary<string, string>
-    //     {
-    //         { "TimeStamp", dataDict["TimeStamp"].ToString() },
-    //         { "UserId", dataDict["UserId"].ToString() },
-    //         { "ImagePromptText", prompt },
-    //         { "Model", dataDict["Model"].ToString() },
-    //         { "Size", dataDict["Size"].ToString() },
-    //         { "Style", dataDict["Style"].ToString() },
-    //         { "Hd", dataDict["Hd"].ToString() }
-    //     };
-
-    //     // Prepare the upload options
-    //     BlobUploadOptions uploadOptions = new BlobUploadOptions
-    //     {
-    //         Metadata = metadata,
-    //         HttpHeaders = new BlobHttpHeaders
-    //         {
-    //             ContentType = "image/png",
-    //         }
-    //     };
-
-    //     // Upload the image to Blob Storage
-    //     using MemoryStream memoryStream = new MemoryStream(imageBytes);
-    //     await blobClient.UploadAsync(memoryStream, uploadOptions);
-
-    //     // Return the URL of the uploaded blob
-    //     return blobClient.Uri.AbsoluteUri;
-    // }
 
     // public async Task DecodeAndStoreImages()
     // {

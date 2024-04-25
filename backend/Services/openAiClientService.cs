@@ -3,6 +3,9 @@ using backend;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using backend.Models;
+using Newtonsoft.Json.Linq;
+using System.Linq.Expressions;
+using Azure;
 
 public class OpenAIClient
 {
@@ -52,65 +55,105 @@ public class OpenAIClient
             throw new InvalidOperationException("One or more required properties are null.");
         }
 
-        var data = new Dictionary<string, object>
+        var timeStamp = DateTime.Now;
+
+        var requestData = new Dictionary<string, object>
         {
             { "model", imageRequest.Model },
             { "prompt", imageRequest.ImagePromptText },
             { "size", imageRequest.Size },
-            { "response_format", "b64_json" }
+            { "response_format", "b64_json" },
         };
 
-        if(imageRequest.Hd == true) {
-            data["quality"] = "hd";
+        if (imageRequest.Samples != null)
+        {
+            requestData["n"] = imageRequest.Samples;
+        }
+
+        if (imageRequest.Hd == true)
+        {
+            requestData["quality"] = "hd";
         }
 
         if(imageRequest.Style == true) {
-            data["style"] = "natural";
+            requestData["style"] = "natural";
         }
 
-        var image = new Image { 
-            UserId = 1, 
-            ImagePromptText = imageRequest.ImagePromptText, 
-            Model = imageRequest.Model, 
-            Size = imageRequest.Size, 
-            Style = imageRequest.Style.GetValueOrDefault(), 
-            Hd = imageRequest.Hd.GetValueOrDefault(), 
-            TimeStamp = DateTime.Now 
-        };
+        var content = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8, "application/json");
 
-        var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync(url, content);
 
-        if (response.IsSuccessStatusCode)
+        var responseString = await response.Content.ReadAsStringAsync();
+
+        var resultObject = JObject.Parse(responseString);
+
+        if (resultObject["data"] is JArray dataArray)
         {
-            var result = await response.Content.ReadAsStringAsync();
-            
-            var resultObject = JsonConvert.DeserializeObject<dynamic>(result);
+            List<Task<string>> uploadTasks = new List<Task<string>>();
 
-            #nullable disable
-            var base64String = resultObject["data"]?[0]?["b64_json"]?.ToString();
-            #nullable enable
-
-            if (base64String == null)
+            var image = new Image
             {
-                throw new InvalidOperationException("Could not find 'b64_json' in the response.");
+                UserId = 1,
+                ImagePromptText = imageRequest?.ImagePromptText,
+                Model = imageRequest?.Model ?? string.Empty,
+                Size = imageRequest?.Size ?? string.Empty,
+                Style = imageRequest?.Style,
+                Hd = imageRequest?.Hd ?? false,
+                TimeStamp = timeStamp
+            };
+
+            try {
+
+                foreach (var item in dataArray)
+                {
+                    var base64String = item["b64_json"]?.ToString();
+
+                    if (base64String == null)
+                    {
+                        throw new InvalidOperationException("Could not find 'b64_json' in the response.");
+                    }
+
+                    try {
+                        if (imageRequest != null) {
+                            // Start uploading the image and add the task to the list
+                            uploadTasks.Add(_imageService.UploadBlobImageFromOpenAi(base64String, imageRequest, timeStamp));
+                        }
+                        else {
+                            throw new ArgumentNullException(nameof(imageRequest), "Image request cannot be null.");
+                        }
+                    }
+                    catch (RequestFailedException e) {
+                        // If the upload fails, save the image to the database with error as BlobName
+                        Image newImage = (Image)image.Clone();
+                        newImage.BlobName = e.ToString();
+                        _context.Images.Add(image);
+                        _context.SaveChanges();
+                    }
+                }
+
+                // Wait for all uploads to complete
+                var blobNames = await Task.WhenAll(uploadTasks);
+
+                // Save each image to the database
+                foreach (var blobName in blobNames)
+                {
+                    Image newImage = (Image)image.Clone();
+                    newImage.BlobName = blobName;
+                    _context.Images.Add(newImage);
+                }
+
+                _context.SaveChanges();
+
+                return new OkObjectResult(responseString);
             }
-
-            var blobName = await _imageService.UploadBlobImageFromOpenAi(base64String, image);
-
-            image.BlobName = blobName;
-            _context.Images.Add(image);
-            _context.SaveChanges();
-
-            return new OkObjectResult(result);
+            catch(Exception e) {
+                throw new Exception($"Error calling OpenAI API: {response.StatusCode}, Exception: {e.Message}");
+            }
         }
         else
         {
-            image.BlobName = "BlobFailure";
-            _context.Images.Add(image);
-            _context.SaveChanges();
-
-            throw new Exception($"Error calling OpenAI API: {response.StatusCode}");
+            // Return an error response when resultObject["data"] is not a JArray
+            return new BadRequestObjectResult("Invalid response from the server.");
         }
     }
 }

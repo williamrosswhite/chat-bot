@@ -89,6 +89,14 @@ a {
   width: 25%;
 }
 
+.denoising-info {
+  margin-top: -15px;
+}
+
+.bottom-element {
+  margin-bottom: 25px;
+}
+
 #warning-banner {
   display: inline-block;
   padding: 10px 50px;

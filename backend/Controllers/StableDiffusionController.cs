@@ -22,12 +22,16 @@ public class StableDiffusionController : ControllerBase
     public async Task<IActionResult> ImageRequest([FromBody] ImageRequest imageRequest)
     {
         Console.WriteLine("attempting stable diffusion request");
-        // Console.WriteLine($"Processing Request: " +
-        //     $"prompt text: {imageRequest.ImagePromptText}, " +
-        //     $"model: {imageRequest.Model}, " +
-        //     $"size: {imageRequest.Size}, " +
-        //     $"natural style: {imageRequest.Style}, " +
-        //     $"hd: {imageRequest.Hd}");
+        Console.WriteLine($"Processing Request: " +
+            $"\nprompt text: {imageRequest.ImagePromptText}, " +
+            $"\nmodel: {imageRequest.Model}, " +
+            $"\nsize: {imageRequest.Size}, " +
+            $"\nnatural style: {imageRequest.Style}, " +
+            $"\nhd: {imageRequest.Hd}" +
+            $"\nguidance scale: {imageRequest.GuidanceScale}" +
+            $"\nsamples: {imageRequest.Samples}" +
+            $"\nsamples: {imageRequest.InferenceDenoisingSteps}"
+        );
 
         if(imageRequest != null && imageRequest.ImagePromptText != null) {
 
@@ -44,7 +48,6 @@ public class StableDiffusionController : ControllerBase
             }
         } else {
             return BadRequest("imagePromptText is null");
-
         }
     }
 

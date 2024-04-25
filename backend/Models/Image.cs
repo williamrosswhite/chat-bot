@@ -1,7 +1,9 @@
 
 namespace backend.Models
 {
-    public class Image
+    using System;
+
+    public class Image: ICloneable
     {
         public int Id { get; set; }
 
@@ -17,7 +19,11 @@ namespace backend.Models
 
         public int? GuidanceScale { get; set; }
 
-        public bool? Panorama { get; set; }
+        public int? InferenceDenoisingSteps { get; set; }
+
+        public long? Seed { get; set; }
+
+        public int? Samples { get; set; }
 
         public string BlobName { get; set; }
 
@@ -28,5 +34,10 @@ namespace backend.Models
 
         // Navigation property for User
         public User? User { get; set; }
+
+        public object Clone()
+        {
+            return this.MemberwiseClone();
+        }
     }
 }

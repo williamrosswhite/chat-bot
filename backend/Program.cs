@@ -28,6 +28,9 @@ builder.Services.AddDbContext<ChatbotDBContext>(options =>
                 errorNumbersToAdd: null);
         }));
 
+// Add HttpClient
+builder.Services.AddHttpClient();
+
 // Add BlobServiceClient to the services
 builder.Services.AddSingleton(x => new BlobServiceClient(builder.Configuration.GetConnectionString("AzureBlobStorage")));
 
