@@ -105,11 +105,16 @@ public class StableDiffusionClientService
             try {
                 if (jsonResponse?.output != null)
                 {
+                    List<ImageReturn> returnImages = new List<ImageReturn>();
+
                     #pragma warning disable CS8602
                     foreach (string imageUrl in jsonResponse?.output)
                     {
                         try{
-                            uploadTasks.Add(_imageService.UploadBlobImage(imageUrl, timeStamp));
+                            uploadTasks.Add(_imageService.UploadBlobImage(image, imageUrl, timeStamp));
+
+                            ImageReturn returnImage = _imageService.CreateImageReturn(image, imageUrl);
+                            returnImages.Add(returnImage);
                         }
                         catch (RequestFailedException e) {
                             // If the upload fails, save the image to the database with error as BlobName
@@ -145,7 +150,7 @@ public class StableDiffusionClientService
                     string returnJson = JsonConvert.SerializeObject(returnObject);
 
                     // Return the JSON string
-                    return new OkObjectResult(returnJson);
+                    return new OkObjectResult(returnImages);
                 }
                 else {
                     return new BadRequestObjectResult("jsonResponse.output is null");

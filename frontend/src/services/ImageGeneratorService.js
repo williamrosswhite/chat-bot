@@ -15,7 +15,7 @@ export default {
       })
       .then(response => {
         console.log(response)
-        return response.data.data;
+        return response.data;
       })
     } catch (error) {
       console.error('Error processing image prompt:', error);

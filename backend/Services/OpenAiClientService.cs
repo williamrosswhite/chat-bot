@@ -90,7 +90,6 @@ public class OpenAIClient
         if (resultObject["data"] is JArray dataArray)
         {
             List<Task<string>> uploadTasks = new List<Task<string>>();
-
             var image = new Image
             {
                 UserId = 1,
@@ -104,6 +103,8 @@ public class OpenAIClient
 
             try {
 
+                List<ImageReturn> returnImages = new List<ImageReturn>();
+
                 foreach (var item in dataArray)
                 {
                     var imageUrl = item["url"]?.ToString();
@@ -114,9 +115,13 @@ public class OpenAIClient
                     }
 
                     try {
-                        if (imageRequest != null) {
+                        if (imageRequest != null) 
+                        {
                             // Start uploading the image and add the task to the list
-                            uploadTasks.Add(_imageService.UploadBlobImage(imageUrl, timeStamp));
+                            uploadTasks.Add(_imageService.UploadBlobImage(image, imageUrl, timeStamp));
+
+                            ImageReturn returnImage = _imageService.CreateImageReturn(image, imageUrl);
+                            returnImages.Add(returnImage);
                         }
                         else {
                             throw new ArgumentNullException(nameof(imageRequest), "Image request cannot be null.");
@@ -144,7 +149,7 @@ public class OpenAIClient
 
                 _context.SaveChanges();
 
-                return new OkObjectResult(responseString);
+                return new OkObjectResult(returnImages);
             }
             catch(Exception e) {
                 throw new Exception($"Error calling OpenAI API: {response.StatusCode}, Exception: {e.Message}");
