@@ -11,11 +11,11 @@ namespace backend.Controllers;
 [ApiController]
 public class StableDiffusionController : ControllerBase
 {
-    private readonly StableDiffusionClient _stableDiffusionClient;
+    private readonly StableDiffusionClientService _stableDiffusionClientService;
 
-    public StableDiffusionController(StableDiffusionClient stableDiffusionClient)
+    public StableDiffusionController(StableDiffusionClientService stableDiffusionClientService)
     {
-        _stableDiffusionClient = stableDiffusionClient;
+        _stableDiffusionClientService = stableDiffusionClientService;
     }
 
     [HttpPost("ImageRequest")]
@@ -36,7 +36,7 @@ public class StableDiffusionController : ControllerBase
 
         if(imageRequest != null && imageRequest.ImagePromptText != null) {
 
-            var result = await _stableDiffusionClient.ProcessImagePrompt(imageRequest);
+            var result = await _stableDiffusionClientService.ProcessImagePrompt(imageRequest);
 
             if (result != null)
             {

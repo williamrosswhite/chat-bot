@@ -11,4 +11,9 @@ public class ImageRequest
     public int? InferenceDenoisingSteps { get; set; }
     public long? Seed { get; set; }
     public int? Samples { get; set; }
+    public ImageRequest()
+    {
+        Model = "Model undefined";
+        Size = "Size undefined";
+    }
 }

@@ -56,81 +56,81 @@ public class ImageService
         return imageUrls;
     }
 
-    internal async Task<string> UploadBlobImageFromOpenAi(string base64String, ImageRequest imageRequest, DateTime timeStamp) 
-    {
-        try {
-            // Convert base64 string to byte array
-            byte[] imageBytes = Convert.FromBase64String(base64String);
+    // internal async Task<string> UploadBlobImageFromOpenAi(string base64String, ImageRequest imageRequest, DateTime timeStamp) 
+    // {
+    //     try {
+    //         // Convert base64 string to byte array
+    //         byte[] imageBytes = Convert.FromBase64String(base64String);
 
-            // Create the container and return a container client object
-            BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
+    //         // Create the container and return a container client object
+    //         BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
 
-            // Create a local file in the ./data/ directory for uploading and downloading
-            string localPath = "./data/";
-            string fileName = Guid.NewGuid().ToString(); // Generate a new name for the image
-            string localFilePath = Path.Combine(localPath, fileName);
+    //         // Create a local file in the ./data/ directory for uploading and downloading
+    //         string localPath = "./data/";
+    //         string fileName = Guid.NewGuid().ToString(); // Generate a new name for the image
+    //         string localFilePath = Path.Combine(localPath, fileName);
 
-            // Write the blob to a file
-            await File.WriteAllBytesAsync(localFilePath, imageBytes);
+    //         // Write the blob to a file
+    //         await File.WriteAllBytesAsync(localFilePath, imageBytes);
 
-            // Get a reference to a blob
-            BlobClient blobClient = containerClient.GetBlobClient(fileName);
+    //         // Get a reference to a blob
+    //         BlobClient blobClient = containerClient.GetBlobClient(fileName);
 
-            // Open the file and upload its data
-            using FileStream uploadFileStream = File.OpenRead(localFilePath);
+    //         // Open the file and upload its data
+    //         using FileStream uploadFileStream = File.OpenRead(localFilePath);
 
-            var imageMetadata = new Dictionary<string, string>
-            {
-                { "model", imageRequest.Model },
-                { "prompt", imageRequest.ImagePromptText ?? string.Empty },
-                { "size", imageRequest.Size },
-                { "response_format", "b64_json" },
-                { "timestamp", timeStamp.ToString() }
-            };
+    //         var imageMetadata = new Dictionary<string, string>
+    //         {
+    //             { "model", imageRequest.Model },
+    //             { "prompt", imageRequest.ImagePromptText ?? string.Empty },
+    //             { "size", imageRequest.Size },
+    //             { "response_format", "b64_json" },
+    //             { "timestamp", timeStamp.ToString() }
+    //         };
 
-            #pragma warning disable CS8601
-            if(imageRequest != null) {
-                if (imageRequest.Samples != null)
-                {
-                    imageMetadata["n"] = imageRequest.Samples?.ToString();
-                }
+    //         #pragma warning disable CS8601
+    //         if(imageRequest != null) {
+    //             if (imageRequest.Samples != null)
+    //             {
+    //                 imageMetadata["n"] = imageRequest.Samples?.ToString();
+    //             }
 
-                if (imageRequest.Hd == true)
-                {
-                    imageMetadata["quality"] = "hd";
-                }
+    //             if (imageRequest.Hd == true)
+    //             {
+    //                 imageMetadata["quality"] = "hd";
+    //             }
 
-                if (imageRequest.Style == true)
-                {
-                    imageMetadata["style"] = "natural";
-                }
-            }
-            #pragma warning restore CS8601
+    //             if (imageRequest.Style == true)
+    //             {
+    //                 imageMetadata["style"] = "natural";
+    //             }
+    //         }
+    //         #pragma warning restore CS8601
 
-            BlobUploadOptions uploadOptions = new BlobUploadOptions 
-            { 
-                Metadata = imageMetadata,
-                HttpHeaders = new BlobHttpHeaders
-                {
-                    ContentType = "image/png",
-                }
-            };
+    //         BlobUploadOptions uploadOptions = new BlobUploadOptions 
+    //         { 
+    //             Metadata = imageMetadata,
+    //             HttpHeaders = new BlobHttpHeaders
+    //             {
+    //                 ContentType = "image/png",
+    //             }
+    //         };
 
-            await blobClient.UploadAsync(uploadFileStream, uploadOptions);
-            uploadFileStream.Close();
+    //         await blobClient.UploadAsync(uploadFileStream, uploadOptions);
+    //         uploadFileStream.Close();
 
-            // Delete the local file
-            File.Delete(localFilePath);
+    //         // Delete the local file
+    //         File.Delete(localFilePath);
 
-            // Return the URL of the uploaded blob
-            return blobClient.Name;
-        }
-        catch (RequestFailedException e) {
-            return e.ToString();
-        }
-    }
+    //         // Return the URL of the uploaded blob
+    //         return blobClient.Name;
+    //     }
+    //     catch (RequestFailedException e) {
+    //         return e.ToString();
+    //     }
+    // }
 
-    internal async Task<string> UploadBlobImageFromStableDiffusion(string imageUrl, DateTime timeStamp) 
+    internal async Task<string> UploadBlobImage(string imageUrl, DateTime timeStamp) 
     {
         Console.WriteLine("Uploading image to blob storage...");
 
@@ -167,37 +167,4 @@ public class ImageService
         // Return the URL of the uploaded blob
         return blobClient.Name;
     }
-
-    // public async Task DecodeAndStoreImages()
-    // {
-    //     Console.WriteLine("Decoding and storing images...");
-    //     var images = await GetImagesAsync();
-    //     Console.WriteLine("Images: " + images.Count.ToString());
-
-    //     foreach (var image in images)
-    //     {
-    //         byte[] imageBytes;
-    //         try
-    //         {
-    //             Console.WriteLine("Decoding image: " + image.Id.ToString() + "...");
-    //             imageBytes = Convert.FromBase64String(image.ImageUrl);
-    //         }
-    //         catch (FormatException)
-    //         {
-    //             Console.WriteLine("Error decoding image: " + image.Id.ToString());
-    //             // ImageUrl is not a base64 string
-    //             continue;
-    //         }
-
-    //         // Create a local file in the ./images/ directory for saving the image
-    //         string localPath = "./images/";
-    //         Directory.CreateDirectory(localPath);
-
-    //         string fileName = image.Id.ToString(); // Use the image's ID as the file name
-    //         string localFilePath = Path.Combine(localPath, fileName);
-
-    //         // Write the image to a file
-    //         await File.WriteAllBytesAsync(localFilePath, imageBytes);
-    //     }
-    // }
 }

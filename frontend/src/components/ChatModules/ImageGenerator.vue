@@ -157,45 +157,39 @@
         }
         if (newModel === 'dall-e-3') {
           this.size = '1024x1024';
+          this.samples = 1; // reset samples to 1
         }
       }
     },
     methods: {
-      processImagePrompt() {
-        if(this.model === 'dall-e-3' || this.model === 'dall-e-2') {
-          this.isLoading = true;
-          console.log('sending...', this.userImagePromptText, "to OpenAI");
-          ImageGeneratorService.processImagePromptOpenAi(this.userImagePromptText, this.model, this.size, this.style, this.hd, this.samples)
-            .then(generatedImageUrls => {
-              this.imageUrls.push(...generatedImageUrls);
-              this.isLoading = false;
-            })
-            .catch(error => {
-              alert(error.message);
-              this.isLoading = false;
-            });
-        } else if (this.model === 'stable-diffusion') {
-          this.isLoading = true;
-          console.log("seed: ", this.seed);
-          console.log('sending...', this.userImagePromptText, "to Stable Diffusion");
-          ImageGeneratorService.processImagePromptStableDiffusion(
-            this.userImagePromptText, 
-            this.size, 
-            this.hd, 
-            this.guidanceScale, 
-            this.samples, 
-            this.interferenceDenoisingSteps, 
-            this.seed
-          ).then(responseData => {
-              console.log('received response: ', responseData);
-              this.imageUrls.push(...responseData.output);
-              this.seed = responseData.seed;
-              this.isLoading = false;
-            })
-            .catch(error => {
-              alert(error.message);
-              this.isLoading = false;
-            });
+      async processImagePrompt() {
+        this.isLoading = true;
+        try {
+          if(this.model === 'dall-e-3' || this.model === 'dall-e-2') {
+            console.log('sending...', this.userImagePromptText, "to OpenAI");
+            const generatedImageUrls = await ImageGeneratorService.processImagePromptOpenAi(this.userImagePromptText, this.model, this.size, this.style, this.hd, this.samples);
+            console.log('received response: ', generatedImageUrls);
+            this.imageUrls.push(...generatedImageUrls.map(item => item.url));
+          } else if (this.model === 'stable-diffusion') {
+            console.log("seed: ", this.seed);
+            console.log('sending...', this.userImagePromptText, "to Stable Diffusion");
+            const responseData = await ImageGeneratorService.processImagePromptStableDiffusion(
+              this.userImagePromptText, 
+              this.size, 
+              this.hd, 
+              this.guidanceScale, 
+              this.samples, 
+              this.interferenceDenoisingSteps, 
+              this.seed
+            );
+            console.log('received response: ', responseData);
+            this.imageUrls.push(...responseData.output);
+            this.seed = responseData.seed;
+          }
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          this.isLoading = false;
         }
       },
       clearSeed() {

@@ -62,7 +62,7 @@ public class OpenAIClient
             { "model", imageRequest.Model },
             { "prompt", imageRequest.ImagePromptText },
             { "size", imageRequest.Size },
-            { "response_format", "b64_json" },
+            { "response_format", "url" },
         };
 
         if (imageRequest.Samples != null)
@@ -106,17 +106,17 @@ public class OpenAIClient
 
                 foreach (var item in dataArray)
                 {
-                    var base64String = item["b64_json"]?.ToString();
+                    var imageUrl = item["url"]?.ToString();
 
-                    if (base64String == null)
+                    if (imageUrl == null)
                     {
-                        throw new InvalidOperationException("Could not find 'b64_json' in the response.");
+                        throw new InvalidOperationException("Could not find 'url' in the response.");
                     }
 
                     try {
                         if (imageRequest != null) {
                             // Start uploading the image and add the task to the list
-                            uploadTasks.Add(_imageService.UploadBlobImageFromOpenAi(base64String, imageRequest, timeStamp));
+                            uploadTasks.Add(_imageService.UploadBlobImage(imageUrl, timeStamp));
                         }
                         else {
                             throw new ArgumentNullException(nameof(imageRequest), "Image request cannot be null.");
@@ -126,7 +126,7 @@ public class OpenAIClient
                         // If the upload fails, save the image to the database with error as BlobName
                         Image newImage = (Image)image.Clone();
                         newImage.BlobName = e.ToString();
-                        _context.Images.Add(image);
+                        _context.Images.Add(newImage);
                         _context.SaveChanges();
                     }
                 }

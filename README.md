@@ -52,4 +52,8 @@ This is just a demo project for me to learn things while I'm on the bench at wor
 
 ```
 - properly configure .gitignore
+- frontend: seperate out the front end components as much as is practical
+- frontend: implement a Vuex store for imageUrls and isLoading and such
+- frontend: create seperate image component for displaying images
+- frontend: create seperate components for all of the different form inputs
 ```

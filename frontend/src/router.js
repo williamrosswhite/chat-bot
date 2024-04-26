@@ -7,6 +7,7 @@ import ImageHistory from './components/ImageHistory.vue'
 const routes = [
   { path: '/', component: ChatBot },
   { path: '/imageHistory', component: ImageHistory },
+  { path: '/:catchAll(.*)', redirect: '/' },  // catch-all route
 ]
 
 const router = createRouter({

@@ -35,6 +35,17 @@ namespace backend.Models
         // Navigation property for User
         public User? User { get; set; }
 
+        public Image()
+        {
+            Id = 0;
+            Model = "Model undefined";            
+            Size = "Size undefined";
+            Hd = false;
+            BlobName = "BlobName undefined";
+            TimeStamp = DateTime.MinValue;
+            UserId = 0;
+        }
+
         public object Clone()
         {
             return this.MemberwiseClone();
