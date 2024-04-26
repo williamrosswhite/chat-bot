@@ -307,6 +307,6 @@ FodyWeavers.xsd
 # Test Results
 TestResults/
 
-appsettings.json
+backend/appsettings.json
 
 # End of .NET Core .gitignore
