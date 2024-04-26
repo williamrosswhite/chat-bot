@@ -1,0 +1,108 @@
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
+}
+
+body hr {
+  width: 25%;
+  margin: 40px auto;
+}
+
+h3 {
+  margin: 40px 0 0;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  display: inline-block;
+  margin: 0 10px;
+}
+
+a {
+  color: #42b983;
+}
+
+.alert {
+  text-align: center;
+}
+
+.assistant {
+  color: #631497;
+  ;
+}
+
+.user {
+  color: green;
+}
+
+.selectors {
+  padding-top: 20px;
+  padding-bottom: 20px; 
+}
+
+.generation-option {
+  padding-top: 10px;
+  margin-bottom: 10px; 
+}
+
+.label {
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.slider-value {
+  margin-left: 10px;
+}
+
+.slider-component {
+  margin-bottom: 15px;
+}
+
+.checkbox-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.radio-button {
+  margin-right: 5px;
+}
+
+.option-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: fit-content;
+  margin: auto;
+  margin-bottom: 15px;
+}
+
+.text-area {
+  width: 25%;
+}
+
+.denoising-info {
+  margin-top: -15px;
+}
+
+.bottom-element {
+  margin-bottom: 25px;
+}
+
+.seed {
+  padding-top: 40px;
+}
+
+#warning-banner {
+  display: inline-block;
+  padding: 10px 50px;
+  margin-top: 0px;
+}

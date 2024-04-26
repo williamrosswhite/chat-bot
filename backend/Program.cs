@@ -1,9 +1,53 @@
+using backend;
+using Microsoft.EntityFrameworkCore;
+using Azure.Storage.Blobs;
+using dotenv.net;
+using DotNetEnv;
+
+Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Could not find a connection string named 'DefaultConnection'.");
+}
+
+builder.Services.AddDbContext<ChatbotDBContext>(options =>
+    options.UseSqlServer(connectionString,
+        sqlServerOptionsAction: sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
+        }));
+
+// Add HttpClient
+builder.Services.AddHttpClient();
+
+// Add BlobServiceClient to the services
+builder.Services.AddSingleton(x => new BlobServiceClient(builder.Configuration.GetConnectionString("AzureBlobStorage")));
+
+// Register OpenAIClient service
+builder.Services.AddScoped<OpenAIClient>();
+
+// Register OpenAIClient service
+builder.Services.AddScoped<StableDiffusionClientService>();
+
+// Register ImageService
+builder.Services.AddScoped<ImageService>();
 
 var app = builder.Build();
 
@@ -26,7 +70,7 @@ else {
 
 // Enable CORS
 app.UseCors(builder => builder
-    .WithOrigins("http://localhost:5111", "http://localhost:5112", "https://localhost:5113", "https://rwhite83-openai-test.azurewebsites.net/") // Include both addresses
+    .WithOrigins("http://localhost:5111", "http://localhost:5112", "https://rwhite83-openai-test.azurewebsites.net/") 
     .AllowAnyHeader()
     .AllowAnyMethod()
     .AllowCredentials());
