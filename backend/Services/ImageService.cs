@@ -130,7 +130,7 @@ public class ImageService
     //     }
     // }
 
-    internal async Task<string> UploadBlobImage(string imageUrl, DateTime timeStamp) 
+    internal async Task<string> UploadBlobImage(Image image, string imageUrl, DateTime timeStamp) 
     {
         Console.WriteLine("Uploading image to blob storage...");
 
@@ -159,12 +159,43 @@ public class ImageService
         BlobClient blobClient = containerClient.GetBlobClient(Guid.NewGuid().ToString());
         using (var stream = new MemoryStream(imageBytes))
         {
-            await blobClient.UploadAsync(stream);
+            var metadata = new Dictionary<string, string>
+            {
+                { "UserId", image.UserId.ToString() },
+                { "Model", image.Model?.ToString() ?? string.Empty},
+                { "Prompt", image.ImagePromptText?.ToString() ?? string.Empty },
+                { "Size", image.Size.ToString() },
+                { "Style", image.Style?.ToString() ?? string.Empty },
+                { "Hd", image.Hd.ToString() },
+                { "Timestamp", image.TimeStamp.ToString() },
+            };
+            var blobUploadOptions = new BlobUploadOptions
+            {
+                Metadata = metadata
+            };
+            await blobClient.UploadAsync(stream, blobUploadOptions);
         }
 
         Console.WriteLine($"Image uploaded to blob storage. Blob URL: {blobClient.Uri.AbsoluteUri}");
 
         // Return the URL of the uploaded blob
         return blobClient.Name;
+    }
+
+    public ImageReturn CreateImageReturn(Image image, string imageUrl)
+    {
+        return new ImageReturn
+        {
+            ImageUrl = imageUrl,
+            ImagePromptText = image.ImagePromptText ?? string.Empty,
+            Model = image.Model ?? string.Empty,
+            Size = image.Size,
+            Style = image.Style.HasValue ? image.Style.Value : false,
+            Hd = image.Hd,
+            GuidanceScale = image.GuidanceScale.HasValue ? image.GuidanceScale.Value : 0,
+            InferenceDenoisingSteps = image.InferenceDenoisingSteps.HasValue ? image.InferenceDenoisingSteps.Value : 0,
+            Seed = image.Seed.HasValue ? image.Seed.Value : 0,
+            Samples = image.Samples.HasValue ? image.Samples.Value : 0
+        };
     }
 }

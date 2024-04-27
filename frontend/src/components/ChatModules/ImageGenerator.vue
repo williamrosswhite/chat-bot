@@ -167,9 +167,9 @@
         try {
           if(this.model === 'dall-e-3' || this.model === 'dall-e-2') {
             console.log('sending...', this.userImagePromptText, "to OpenAI");
-            const generatedImageUrls = await ImageGeneratorService.processImagePromptOpenAi(this.userImagePromptText, this.model, this.size, this.style, this.hd, this.samples);
-            console.log('received response: ', generatedImageUrls);
-            this.imageUrls.push(...generatedImageUrls.map(item => item.url));
+            const responseData = await ImageGeneratorService.processImagePromptOpenAi(this.userImagePromptText, this.model, this.size, this.style, this.hd, this.samples);
+            console.log('received response: ', responseData);
+            this.imageUrls.push(...responseData.map(item => item.imageUrl));
           } else if (this.model === 'stable-diffusion') {
             console.log("seed: ", this.seed);
             console.log('sending...', this.userImagePromptText, "to Stable Diffusion");
@@ -183,7 +183,7 @@
               this.seed
             );
             console.log('received response: ', responseData);
-            this.imageUrls.push(...responseData.output);
+            this.imageUrls.push(...responseData.map(item => item.imageUrl));
             this.seed = responseData.seed;
           }
         } catch (error) {

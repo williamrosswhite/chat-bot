@@ -308,5 +308,6 @@ FodyWeavers.xsd
 TestResults/
 
 backend/appsettings.json
+backend/.env
 
 # End of .NET Core .gitignore
