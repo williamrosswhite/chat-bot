@@ -309,5 +309,6 @@ TestResults/
 
 backend/appsettings.json
 backend/.env
+wwwroot/
 
 # End of .NET Core .gitignore

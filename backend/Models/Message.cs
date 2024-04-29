@@ -1,27 +1,51 @@
 namespace backend.Models
 {
+    using System;
+
+    /// <summary>
+    /// Represents a message.
+    /// </summary>
     public class Message
     {
-        public Message() {
-            Prompt = string.Empty;
-            Response = string.Empty;
-            TimeStamp = DateTime.Now; 
-            UserId = 0;
-            User = new User();
-        }
+        private string _prompt = string.Empty;
+        private string _response = string.Empty;
 
+        /// <summary>
+        /// Gets or sets the ID.
+        /// </summary>
         public int Id { get; set; }
 
-        public string Prompt { get; set; }
+        /// <summary>
+        /// Gets or sets the prompt. If not defined, defaults to an empty string.
+        /// </summary>
+        public string Prompt
+        {
+            get => _prompt;
+            set => _prompt = value ?? string.Empty;
+        }
 
-        public string? Response { get; set; }
+        /// <summary>
+        /// Gets or sets the response. If not defined, defaults to an empty string.
+        /// </summary>
+        public string Response
+        {
+            get => _response;
+            set => _response = value ?? string.Empty;
+        }
 
-        public DateTime TimeStamp { get; set; }
+        /// <summary>
+        /// Gets or sets the timestamp.
+        /// </summary>
+        public DateTime TimeStamp { get; set; } = DateTime.Now;
 
-        // Foreign key for User
+        /// <summary>
+        /// Gets or sets the user ID.
+        /// </summary>
         public int UserId { get; set; }
 
-        // Navigation property for User
-        public User User { get; set; }
+        /// <summary>
+        /// Gets or sets the user.
+        /// </summary>
+        public User User { get; set; } = new User();
     }
 }

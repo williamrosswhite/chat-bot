@@ -1,4 +1,4 @@
-
+using Microsoft.AspNetCore.Mvc;
 using backend;
 using backend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -14,151 +14,131 @@ public class ImageService
     private readonly ChatbotDBContext _context;
     private readonly HttpClient _httpClient;
     private readonly BlobServiceClient _blobServiceClient;
+    private readonly ILogger<ImageService> _logger;
 
-    public ImageService(ChatbotDBContext context, HttpClient httpClient, BlobServiceClient blobServiceClient)
+    public ImageService(ChatbotDBContext context, HttpClient httpClient, BlobServiceClient blobServiceClient, ILogger<ImageService> logger)
     {
-        _context = context;
-        _httpClient = httpClient;
-        _blobServiceClient = blobServiceClient;
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _blobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<List<Image>> GetImagesAsync()
     {
-        return await _context.Images.ToListAsync();
-    }
-
-    internal async Task<List<string>> GetImageUrlsAsync()
-    {
-        var images = await GetImagesAsync();
-
-        var containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
-
-        var imageUrls = images.Where(image => image.BlobName != null).Select(image =>
+        try
         {
-            var blobClient = containerClient.GetBlobClient(image.BlobName);
-
-            var sasBuilder = new BlobSasBuilder
-            {
-                BlobContainerName = containerClient.Name,
-                BlobName = blobClient.Name,
-                Resource = "b",
-                StartsOn = DateTimeOffset.UtcNow.AddHours(-1),
-                ExpiresOn = DateTimeOffset.UtcNow.AddHours(24),
-            };
-
-            sasBuilder.SetPermissions(BlobSasPermissions.Read);
-
-            var sasToken = blobClient.GenerateSasUri(sasBuilder);
-
-            return sasToken.ToString();
-        }).ToList();
-
-        return imageUrls;
+            return await _context.Images.ToListAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error retrieving images from the database in {nameof(GetImagesAsync)}.");
+            throw;
+        }    
     }
 
-    // internal async Task<string> UploadBlobImageFromOpenAi(string base64String, ImageRequest imageRequest, DateTime timeStamp) 
-    // {
-    //     try {
-    //         // Convert base64 string to byte array
-    //         byte[] imageBytes = Convert.FromBase64String(base64String);
+    internal async Task<IActionResult> GetImageUrlsAsync()
+    {
+        try
+        {
+            var images = await GetImagesAsync().ConfigureAwait(false);
+            var containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
 
-    //         // Create the container and return a container client object
-    //         BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
+            List<ImageReturn> returnImages = new List<ImageReturn>();
 
-    //         // Create a local file in the ./data/ directory for uploading and downloading
-    //         string localPath = "./data/";
-    //         string fileName = Guid.NewGuid().ToString(); // Generate a new name for the image
-    //         string localFilePath = Path.Combine(localPath, fileName);
+            foreach (var image in images)
+            {
+                if (image.BlobName is not null)
+                {
+                    var blobClient = containerClient.GetBlobClient(image.BlobName);
 
-    //         // Write the blob to a file
-    //         await File.WriteAllBytesAsync(localFilePath, imageBytes);
+                    // Create a SAS token that's valid for one day
+                    var sasBuilder = new BlobSasBuilder
+                    {
+                        BlobContainerName = containerClient.Name,
+                        BlobName = blobClient.Name,
+                        Resource = "b",
+                        StartsOn = DateTimeOffset.UtcNow.AddHours(-1),
+                        ExpiresOn = DateTimeOffset.UtcNow.AddHours(24),
+                    };
+                    sasBuilder.SetPermissions(BlobSasPermissions.Read);
+                    var sasToken = blobClient.GenerateSasUri(sasBuilder);
 
-    //         // Get a reference to a blob
-    //         BlobClient blobClient = containerClient.GetBlobClient(fileName);
+                    // Create ImageReturn object using CreateImageReturn method and add to returnImages
+                    ImageReturn returnImage = CreateImageReturn(image, sasToken.ToString());
+                    returnImages.Add(returnImage);
+                }
+            }
 
-    //         // Open the file and upload its data
-    //         using FileStream uploadFileStream = File.OpenRead(localFilePath);
-
-    //         var imageMetadata = new Dictionary<string, string>
-    //         {
-    //             { "model", imageRequest.Model },
-    //             { "prompt", imageRequest.ImagePromptText ?? string.Empty },
-    //             { "size", imageRequest.Size },
-    //             { "response_format", "b64_json" },
-    //             { "timestamp", timeStamp.ToString() }
-    //         };
-
-    //         #pragma warning disable CS8601
-    //         if(imageRequest != null) {
-    //             if (imageRequest.Samples != null)
-    //             {
-    //                 imageMetadata["n"] = imageRequest.Samples?.ToString();
-    //             }
-
-    //             if (imageRequest.Hd == true)
-    //             {
-    //                 imageMetadata["quality"] = "hd";
-    //             }
-
-    //             if (imageRequest.Style == true)
-    //             {
-    //                 imageMetadata["style"] = "natural";
-    //             }
-    //         }
-    //         #pragma warning restore CS8601
-
-    //         BlobUploadOptions uploadOptions = new BlobUploadOptions 
-    //         { 
-    //             Metadata = imageMetadata,
-    //             HttpHeaders = new BlobHttpHeaders
-    //             {
-    //                 ContentType = "image/png",
-    //             }
-    //         };
-
-    //         await blobClient.UploadAsync(uploadFileStream, uploadOptions);
-    //         uploadFileStream.Close();
-
-    //         // Delete the local file
-    //         File.Delete(localFilePath);
-
-    //         // Return the URL of the uploaded blob
-    //         return blobClient.Name;
-    //     }
-    //     catch (RequestFailedException e) {
-    //         return e.ToString();
-    //     }
-    // }
+            return new OkObjectResult(returnImages);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error generating image URLs in {nameof(GetImageUrlsAsync)}.");
+            return new BadRequestObjectResult($"Error generating image URLs in {nameof(GetImageUrlsAsync)}: {ex.Message}");
+        }
+    }
 
     internal async Task<string> UploadBlobImage(Image image, string imageUrl, DateTime timeStamp) 
     {
-        Console.WriteLine("Uploading image to blob storage...");
-
-        // Define a policy that will handle exceptions and 404 status codes
-        var policy = Policy
-            .Handle<HttpRequestException>()
-            .OrResult<HttpResponseMessage>(message => message.StatusCode == System.Net.HttpStatusCode.NotFound)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(5, retryAttempt)),        
-                onRetry: (exception, timeSpan, retryCount, context) =>
-                {
-                    Console.WriteLine($"Retry {retryCount} encountered. Waiting {timeSpan.TotalSeconds} seconds before next attempt.");
-                });
-
-        // Download the image using the policy to execute the HTTP request
-        var imageResponse = await policy.ExecuteAsync(() => _httpClient.GetAsync(imageUrl));
-        Console.WriteLine("Image downloaded successfully.");
-
-        var imageBytes = await imageResponse.Content.ReadAsByteArrayAsync();
-        Console.WriteLine("Image converted to byte array successfully.");
-
-        // Create the container and return a container client object
-        BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
-        Console.WriteLine("Blob container client created successfully.");
-
-        // Create a new blob and upload the image
-        BlobClient blobClient = containerClient.GetBlobClient(Guid.NewGuid().ToString());
-        using (var stream = new MemoryStream(imageBytes))
+        try
         {
+            _logger.LogInformation($"Attempting upload of image to blob storage in {nameof(UploadBlobImage)}...");
+
+            // Define a policy that will handle exceptions and 404 status codes
+            var policy = Policy
+                .Handle<HttpRequestException>()
+                .OrResult<HttpResponseMessage>(message => message.StatusCode == System.Net.HttpStatusCode.NotFound)
+                .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(5, retryAttempt)),        
+                    onRetry: (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogInformation($"Retry {retryCount} encountered. Waiting {timeSpan.TotalSeconds} seconds before next attempt.");
+                    });
+
+            HttpResponseMessage imageResponse;
+
+            try
+            {
+                // Download the image
+                imageResponse = await policy.ExecuteAsync(() => _httpClient.GetAsync(imageUrl)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error downloading image in {nameof(UploadBlobImage)}.");
+                throw;
+            }
+
+            byte[] imageBytes;
+
+            try
+            {
+                // Read the contents of the downloaded image
+                imageBytes = await imageResponse.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error converting image to byte array in {nameof(UploadBlobImage)}.");
+                throw;
+            }
+
+            _logger.LogInformation("Image successfully downloaded and read.  Attempting to upload to blob storage...");
+
+            BlobContainerClient containerClient;
+
+            try
+            {
+                // Create the container, return a container client object, then create new blob and upload the image
+                containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error creating blob container client in {nameof(UploadBlobImage)}.");
+                throw;
+            }
+
+            BlobClient blobClient = containerClient.GetBlobClient(Guid.NewGuid().ToString());
+            
+            using var stream = new MemoryStream(imageBytes);
             var metadata = new Dictionary<string, string>
             {
                 { "UserId", image.UserId.ToString() },
@@ -169,33 +149,67 @@ public class ImageService
                 { "Hd", image.Hd.ToString() },
                 { "Timestamp", image.TimeStamp.ToString() },
             };
+
             var blobUploadOptions = new BlobUploadOptions
             {
                 Metadata = metadata
             };
-            await blobClient.UploadAsync(stream, blobUploadOptions);
+
+            try
+            {
+                // Upload the image to blob storage
+                await blobClient.UploadAsync(stream, blobUploadOptions).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error uploading image to blob storage in {nameof(UploadBlobImage)}.");
+                throw;
+            }
+
+            _logger.LogInformation($"Image uploaded to blob storage. Blob URL: {blobClient.Uri.AbsoluteUri}"); 
+
+            // Return the URL of the uploaded blob
+            return blobClient.Name;
         }
-
-        Console.WriteLine($"Image uploaded to blob storage. Blob URL: {blobClient.Uri.AbsoluteUri}");
-
-        // Return the URL of the uploaded blob
-        return blobClient.Name;
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error in {nameof(UploadBlobImage)} method.");
+            throw;
+        }
     }
 
     public ImageReturn CreateImageReturn(Image image, string imageUrl)
     {
-        return new ImageReturn
+        try
         {
-            ImageUrl = imageUrl,
-            ImagePromptText = image.ImagePromptText ?? string.Empty,
-            Model = image.Model ?? string.Empty,
-            Size = image.Size,
-            Style = image.Style.HasValue ? image.Style.Value : false,
-            Hd = image.Hd,
-            GuidanceScale = image.GuidanceScale.HasValue ? image.GuidanceScale.Value : 0,
-            InferenceDenoisingSteps = image.InferenceDenoisingSteps.HasValue ? image.InferenceDenoisingSteps.Value : 0,
-            Seed = image.Seed.HasValue ? image.Seed.Value : 0,
-            Samples = image.Samples.HasValue ? image.Samples.Value : 0
-        };
+            if (image is null)
+            {
+                throw new ArgumentNullException(nameof(image), "Image cannot be null.");
+            }
+
+            if (string.IsNullOrEmpty(imageUrl))
+            {
+                throw new ArgumentException("Image URL cannot be null or empty.", nameof(imageUrl));
+            }
+
+            return new ImageReturn
+            {
+                ImageUrl = imageUrl,
+                ImagePromptText = image.ImagePromptText ?? string.Empty,
+                Model = image.Model ?? string.Empty,
+                Size = image.Size,
+                Style = image.Style.HasValue ? image.Style.Value : false,
+                Hd = image.Hd,
+                GuidanceScale = image.GuidanceScale.HasValue ? image.GuidanceScale.Value : 0,
+                InferenceDenoisingSteps = image.InferenceDenoisingSteps.HasValue ? image.InferenceDenoisingSteps.Value : 0,
+                Seed = image.Seed.HasValue ? image.Seed.Value : 0,
+                Samples = image.Samples.HasValue ? image.Samples.Value : 0
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error creating ImageReturn object in {nameof(CreateImageReturn)}.");
+            throw;
+        }
     }
 }

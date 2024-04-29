@@ -1,11 +1,11 @@
 // router.js
 import { createRouter, createWebHistory } from 'vue-router'
-import ChatBot from './components/ChatBot.vue'
-import ImageHistory from './components/ImageHistory.vue'
+import Generator from './components/views/Generator.vue'
+import ImageHistory from './components/views/ImageHistory.vue'
 
 
 const routes = [
-  { path: '/', component: ChatBot },
+  { path: '/', component: Generator },
   { path: '/imageHistory', component: ImageHistory },
   { path: '/:catchAll(.*)', redirect: '/' },  // catch-all route
 ]

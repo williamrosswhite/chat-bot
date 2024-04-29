@@ -5,79 +5,108 @@ using backend.Models;
 using backend.Migrations;
 using backend.Controllers;
 
-namespace backend.Controllers;
-
-[Route("openapi")]
-[ApiController]
-public class OpenAiController : ControllerBase
+namespace backend.Controllers
 {
-    private readonly OpenAIClient _openAIClient;
-
-    public OpenAiController(OpenAIClient openAIClient)
+    [Route("openapi")]
+    [ApiController]
+    public class OpenAiController : ControllerBase
     {
-        _openAIClient = openAIClient;
-    }
+        private readonly OpenAIClient _openAIClient;
+        private readonly ILogger<OpenAiController> _logger;
 
-    [HttpPost("ChatRequest")]
-    public async Task<IActionResult> PostAsync([FromBody] ChatRequest chatRequest)
-    {
-        Console.WriteLine("chatRequest: " + chatRequest);
-
-        if (chatRequest != null && chatRequest.messages != null && chatRequest.messages.Length >= 0)
+        public OpenAiController(OpenAIClient openAIClient, ILogger<OpenAiController> logger)
         {
-            foreach (ChatMessage msg in chatRequest.messages)
+            _openAIClient = openAIClient ?? throw new ArgumentNullException(nameof(openAIClient));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        [HttpPost("ChatRequest")]
+        public async Task<IActionResult> PostAsync([FromBody] ChatRequest chatRequest)
+        {
+            _logger.LogInformation("Processing OpenAi Chat Request:");
+
+            if (chatRequest?.Messages != null)
             {
-                Console.WriteLine("role: " + msg.role);
-                Console.WriteLine("content: " + msg.content);
-            }
-        }
-        else
-        {
-            Console.WriteLine("chatRequest is null or messages is null or messages length is less than 0");
-        }
-
-        if (chatRequest != null) // Add null check for chatRequest
-        {
-            var response = await _openAIClient.ProcessChatPrompt(chatRequest);
-            return Ok(response);
-        }
-        else
-        {
-            // Handle the case when chatRequest is null
-            return BadRequest("chatRequest is null");
-        }
-    }
-
-    [HttpPost("ImageRequest")]
-    public async Task<IActionResult> ImageRequest([FromBody] ImageRequest imageRequest)
-    {
-        Console.WriteLine($"Processing Request: " +
-            $"prompt text: {imageRequest.ImagePromptText}, " +
-            $"model: {imageRequest.Model}, " +
-            $"size: {imageRequest.Size}, " +
-            $"natural style: {imageRequest.Style}, " +
-            $"samples: {imageRequest.Samples}, " +
-            $"hd: {imageRequest.Hd}");
-
-        if(imageRequest != null && imageRequest.ImagePromptText != null) {
-
-                    Console.WriteLine("DO YOU GET HERE??");
-
-
-            var result = await _openAIClient.ProcessImagePrompt(imageRequest);
-
-            if (result != null)
-            {
-                return result;
+                for (int i = 0; i < chatRequest.Messages.Length; i++)
+                {
+                    _logger.LogInformation("Processing message {MessageNumber} in chatRequest: Role: {Role}, Content: {Content}", 
+                        i + 1, 
+                        chatRequest.Messages[i].Role, 
+                        chatRequest.Messages[i].Content);
+                }
             }
             else
             {
-                // Handle the case when imageRequest is null
-                return BadRequest("imageData is null");
+                _logger.LogInformation("chatRequest is null or messages is null");
             }
-        } else {
-            return BadRequest("imagePromptText is null");
 
+            if (chatRequest != null)
+            {
+                try
+                {
+                    var response = await _openAIClient.ProcessChatPrompt(chatRequest);
+                    return Ok(response);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred while processing the chat prompt");
+                    return StatusCode(500, "An error occurred while processing your request");
+                }
+            }
+            else
+            {
+                return BadRequest("chatRequest is null");
+            }
+        }
+
+        [HttpPost("ImageRequest")]
+        public async Task<IActionResult> ImageRequest([FromBody] ImageRequest imageRequest)
+        {
+            _logger.LogInformation("Processing OpenAi Image Request: " +
+                "ImagePromptText: {ImagePromptText}, " +
+                "Model: {Model}, " +
+                "Size: {Size}, " +
+                "Style: {Style}, " +
+                "Hd: {Hd}, " +
+                "GuidanceScale: {GuidanceScale}, " +
+                "InferenceDenoisingSteps: {InferenceDenoisingSteps}, " +
+                "Seed: {Seed}, " +
+                "Samples: {Samples}",
+                imageRequest?.ImagePromptText,
+                imageRequest?.Model,
+                imageRequest?.Size,
+                imageRequest?.Style,
+                imageRequest?.Hd,
+                imageRequest?.GuidanceScale,
+                imageRequest?.InferenceDenoisingSteps,
+                imageRequest?.Seed,
+                imageRequest?.Samples);
+
+            if(imageRequest != null && imageRequest.ImagePromptText != null) 
+            {
+                try
+                {
+                    var result = await _openAIClient.ProcessImagePrompt(imageRequest);
+
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                    else
+                    {
+                        return BadRequest("imageData is null");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred while processing the image prompt");
+                    return StatusCode(500, "An error occurred while processing your request");
+                }
+            } 
+            else 
+            {
+                return BadRequest("imagePromptText is null");
+            }
         }
     }
 }

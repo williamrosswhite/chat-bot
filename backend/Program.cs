@@ -34,8 +34,19 @@ builder.Services.AddDbContext<ChatbotDBContext>(options =>
                 errorNumbersToAdd: null);
         }));
 
-// Add HttpClient
-builder.Services.AddHttpClient();
+// Add HttpClient with pre-configured settings for OpenAI
+builder.Services.AddHttpClient("OpenAI", client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/");
+    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", builder.Configuration["OPENAI_API_KEY"]);
+});
+
+// Add HttpClient with pre-configured settings for StableDiffusion
+builder.Services.AddHttpClient("StableDiffusion", client =>
+{
+    client.BaseAddress = new Uri("https://stablediffusionapi.com/");
+    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", builder.Configuration["STABLE_DIFFUSION_KEY"]);
+});
 
 // Add BlobServiceClient to the services
 builder.Services.AddSingleton(x => new BlobServiceClient(builder.Configuration.GetConnectionString("AzureBlobStorage")));
@@ -51,10 +62,13 @@ builder.Services.AddScoped<ImageService>();
 
 var app = builder.Build();
 
+// Get a logger
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    Console.WriteLine("Development Environment, must launch front end independently.");
+    logger.LogInformation("Development Environment, must launch front end independently.");
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -63,7 +77,7 @@ if (app.Environment.IsDevelopment())
     });
 } 
 else {
-    Console.WriteLine("Staging Environment, launching with internal static front end.");
+    logger.LogInformation("Staging Environment, launching with internal static front end.");
     app.UseDefaultFiles();
     app.UseStaticFiles();
 }

@@ -5,42 +5,41 @@ using Newtonsoft.Json;
 using backend.Models;
 using Polly.Fallback;
 using Azure;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 public class StableDiffusionClientService
 {
+    private readonly IHttpClientFactory _clientFactory;
     private readonly ChatbotDBContext _dBcontext;
     private readonly ImageService _imageService;
     private readonly ILogger<StableDiffusionClientService> _logger;
     private readonly string stableDiffusionKey;
-    private readonly HttpClient _httpClient;
 
-    public StableDiffusionClientService(ChatbotDBContext dBcontext,  ImageService imageService, ILogger<StableDiffusionClientService> logger)
+    public StableDiffusionClientService(IHttpClientFactory clientFactory, ChatbotDBContext dBcontext,  ImageService imageService, ILogger<StableDiffusionClientService> logger)
     {
+        _clientFactory = clientFactory;
         _dBcontext = dBcontext;
         _imageService = imageService;
         _logger = logger;
 
         var localStableDiffusionKey = Environment.GetEnvironmentVariable("STABLEDIFFUSION_API_KEY");
 
-        if (localStableDiffusionKey == null)
+        if (string.IsNullOrEmpty(localStableDiffusionKey))
         {
-            _logger.LogInformation("STABLEDIFFUSION_API_KEY environment variable is not set");
-            throw new Exception("STABLEDIFFUSION_API_KEY environment variable is not set");
+            _logger.LogError("STABLEDIFFUSION_API_KEY environment variable is not set");
+            throw new InvalidOperationException("STABLEDIFFUSION_API_KEY environment variable is not set");
         }
 
-        stableDiffusionKey = localStableDiffusionKey;
-
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://stablediffusionapi.com/")
-        };
-        _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", localStableDiffusionKey.ToString());        
-        _logger.LogInformation("STABLEDIFFUSION_API_KEY: {stableDiffusionKey}", stableDiffusionKey);
+        stableDiffusionKey = localStableDiffusionKey;     
     }
 
     public async Task<IActionResult> ProcessImagePrompt(ImageRequest imageRequest)
     {
-        if(imageRequest == null) {
+        var client = _clientFactory.CreateClient("StableDiffusion");
+
+        if (imageRequest == null) {
+            _logger.LogError("Image request cannot be null.");
             throw new ArgumentNullException(nameof(imageRequest), "Image request cannot be null.");
         }
 
@@ -62,33 +61,64 @@ public class StableDiffusionClientService
             seed = imageRequest.Seed
         };
 
-        Console.WriteLine("data: " + data);
+        _logger.LogInformation("data: {data}", data);
 
+        // Encode information to send to API
         var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync(url, content);
+        HttpResponseMessage response;
 
-        if (response != null && response.IsSuccessStatusCode)
+        try {
+            // Attempt to send request to Stable Diffusion API
+            response = await client.PostAsync(url, content);
+
+        } catch (HttpRequestException e) {
+            _logger.LogError($"Error sending request to Stable Diffusion API: {e.Message}");
+            throw new InvalidOperationException("STABLEDIFFUSION_API_KEY environment variable is not set");
+        }
+
+        if (response == null || !response.IsSuccessStatusCode)
         {
-            var result = await response.Content.ReadAsStringAsync();
-            Console.WriteLine("Response content read successfully.");
+            _logger.LogError($"Error calling Stable Diffusion API: {response?.StatusCode}");
+            return new BadRequestObjectResult(response == null ? "Response is null." : $"Response status code: {response.StatusCode}");
+        }
 
-            if(string.IsNullOrEmpty(result)) {
-                throw new ArgumentNullException("Result of reading response content is null.");
-            }
-            
-            dynamic? jsonResponse = result != null ? JsonConvert.DeserializeObject(result): null;
-            Console.WriteLine($"Json Response Content: {jsonResponse}");
+        string result;
 
-            if(jsonResponse == null) {
-                throw new ArgumentNullException("Deserializing result failed. jsonResponse is null.");
-            }
+        try {
+            // Attempt to read response content
+            result = await response.Content.ReadAsStringAsync();
 
-            if(jsonResponse.output == null) {
-                throw new ArgumentNullException("Deserializing result failed. jsonResponse.output is null.");
-            }
-            
-            List<Task<string>> uploadTasks = new List<Task<string>>();
+        } catch (Exception e) {
+            _logger.LogError($"Error reading response content: {e.Message}");
+            return new BadRequestObjectResult($"Error reading response content: {e.Message}");
+        }
 
+        if (string.IsNullOrEmpty(result)) {
+            _logger.LogError("Result of reading response content is null.");
+            return new BadRequestObjectResult("Result of reading response content is null.");
+        }
+
+        dynamic jsonResponse;
+
+        try {
+            // Attempt to deserialize response content
+            jsonResponse = JsonConvert.DeserializeObject(result);
+
+        } catch (JsonException e) {
+            _logger.LogError($"Error deserializing response content: {e.Message}");
+            return new BadRequestObjectResult($"Error deserializing response content: {e.Message}");
+        }
+
+        if (jsonResponse == null || jsonResponse.output == null) {
+            _logger.LogError("Deserializing result failed. jsonResponse or jsonResponse.output is null.");
+            return new BadRequestObjectResult("Deserializing result failed. jsonResponse or jsonResponse.output is null.");
+        }
+
+        List<Task<string>> uploadTasks = new List<Task<string>>();
+        List<ImageReturn> returnImages = new List<ImageReturn>();
+
+        foreach (string imageUrl in jsonResponse.output)
+        {
             var image = new Image { 
                 UserId = 1, 
                 ImagePromptText = imageRequest.ImagePromptText, 
@@ -102,68 +132,67 @@ public class StableDiffusionClientService
                 Seed = jsonResponse.meta?.seed ?? "Seed undefined"
             };
 
-            try {
-                if (jsonResponse?.output != null)
-                {
-                    List<ImageReturn> returnImages = new List<ImageReturn>();
+            try{
+                // Add attempt to upload image to blob storage to uploadTasks
+                uploadTasks.Add(_imageService.UploadBlobImage(image, imageUrl, timeStamp));
 
-                    #pragma warning disable CS8602
-                    foreach (string imageUrl in jsonResponse?.output)
-                    {
-                        try{
-                            uploadTasks.Add(_imageService.UploadBlobImage(image, imageUrl, timeStamp));
+                // Create ImageReturn object and add to returnImages
+                ImageReturn returnImage = _imageService.CreateImageReturn(image, imageUrl);
 
-                            ImageReturn returnImage = _imageService.CreateImageReturn(image, imageUrl);
-                            returnImages.Add(returnImage);
-                        }
-                        catch (RequestFailedException e) {
-                            // If the upload fails, save the image to the database with error as BlobName
-                            Image newImage = (Image)image.Clone();
-                            newImage.BlobName = e.ToString();
-                            _dBcontext.Images.Add(newImage);
-                            _dBcontext.SaveChanges();
-                        }
-                    }
-                    #pragma warning restore CS8602
+                // Add seed to returnImage
+                returnImage.Seed = jsonResponse.meta?.seed ?? default(long);
 
-                    // Wait for all uploads to complete
-                    string[] blobNames = await Task.WhenAll(uploadTasks);
+                // Add returnImage to returnImages
+                returnImages.Add(returnImage);
 
-                    // Save each image to the database
-                    foreach (var blobName in blobNames)
-                    {
-                        Image newImage = (Image)image.Clone();
-                        newImage.BlobName = blobName;
-                        _dBcontext.Images.Add(newImage);
-                    }
-
-                    _dBcontext.SaveChanges();
-
-                    // Create a new object that includes both jsonResponse.output and jsonResponse.meta
-                    var returnObject = new
-                    {
-                        output = jsonResponse?.output ?? "Output undefined",
-                        seed = jsonResponse?.meta?.seed ?? "Seed undefined"
-                    };
-
-                    // Convert the object to a JSON string
-                    string returnJson = JsonConvert.SerializeObject(returnObject);
-
-                    // Return the JSON string
-                    return new OkObjectResult(returnImages);
-                }
-                else {
-                    return new BadRequestObjectResult("jsonResponse.output is null");
-                }
             }
-            catch(Exception e) {
-                return new BadRequestObjectResult($"Error calling Stable Diffusion API: {response.StatusCode}, Exception: {e.Message}");
+            catch (RequestFailedException e) {
+                _logger.LogError($"Error uploading image to blob storage: {e.Message}");
+
+                // Still add image to database with BlobName as exception message if blob upload fails
+                Image newImage = (Image)image.Clone();
+                newImage.BlobName = $"Error: {e.Message}. Original URL: {imageUrl}";
+                _dBcontext.Images.Add(newImage);
+                await _dBcontext.SaveChangesAsync();
             }
         }
-        else
-        {
-            // Return an error response is null or not successful
-            return new BadRequestObjectResult(response == null || !response.IsSuccessStatusCode ? "Response is null or not successful." : response.StatusCode.ToString());
+
+        try {
+            // Wait for all uploadTasks to complete
+            string[] blobNames = await Task.WhenAll(uploadTasks);
+
+            // Prepare images for database and add them all at once
+            var images = blobNames.Select(blobName => new Image { 
+                UserId = 1, 
+                ImagePromptText = imageRequest.ImagePromptText, 
+                Model = imageRequest.Model, 
+                Size = imageRequest.Size, 
+                Style = null,
+                Hd = imageRequest.Hd,
+                InferenceDenoisingSteps = imageRequest.InferenceDenoisingSteps,
+                GuidanceScale = imageRequest.GuidanceScale,
+                TimeStamp = timeStamp,
+                Seed = jsonResponse.meta?.seed ?? "Seed undefined",
+                BlobName = blobName
+            }).ToList();
+
+            _dBcontext.Images.AddRange(images);
+            
+            await _dBcontext.SaveChangesAsync();
+            _logger.LogInformation("Images were successfully stored in the database.");
+
+        } catch (DbUpdateException e) {
+            _logger.LogError($"Error saving images to database: {e.Message}");
+            foreach (var entry in e.Entries)
+            {
+                _logger.LogError($"Entity that caused exception: {entry.Entity.GetType().Name}");
+            }
+            return new BadRequestObjectResult($"Error saving images to database: {e.Message}");
+        } catch (Exception e) {
+            _logger.LogError($"Error saving images to database: {e.Message}");
+            return new BadRequestObjectResult($"Error saving images to database: {e.Message}");
         }
+
+        return new OkObjectResult(returnImages);
     }
 }
