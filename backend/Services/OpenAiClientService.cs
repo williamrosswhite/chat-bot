@@ -4,104 +4,100 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using backend.Models;
 using Newtonsoft.Json.Linq;
-using System.Linq.Expressions;
 using Azure;
+using System.Net.Http;
 
 public class OpenAIClient
 {
+    private readonly HttpClient _client;
+    private readonly ILogger<OpenAIClient> _logger;
     private readonly ChatbotDBContext _context;
-    private readonly HttpClient _httpClient;
     private readonly ImageService _imageService;
 
-    public OpenAIClient(ChatbotDBContext context, ImageService imageService)
+    public OpenAIClient(IHttpClientFactory clientFactory, ChatbotDBContext context, ImageService imageService, ILogger<OpenAIClient> logger)
     {
+        _client = clientFactory.CreateClient("OpenAI");
+        _logger = logger;
         _context = context;
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.openai.com/")
-        };
-        _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Environment.GetEnvironmentVariable("OPENAI_API_KEY"));
         _imageService = imageService;
     }
 
     public async Task<string> ProcessChatPrompt(backend.ChatRequest chatRequest)
     {
-        var payload = new {
-            model = "gpt-3.5-turbo",
-            chatRequest.messages
-        };
-        
-        var content = new StringContent(
-            System.Text.Json.JsonSerializer.Serialize(payload), 
-            Encoding.UTF8, 
-            "application/json"
-        );
+        try
+        {
+            var payload = new {
+                model = "gpt-3.5-turbo",
+                chatRequest.Messages
+            };
+            
+            var content = CreateJsonContent(payload);
 
-        Console.WriteLine("content: " + content);
-        
-        var response = await _httpClient.PostAsync("v1/chat/completions", content);
-        
-        var responseString = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Sending chat prompt to OpenAI API: {content}");
 
-        return responseString;
+            var responseString = await SendRequest("v1/chat/completions", content);
+            
+            _logger.LogInformation($"Received response from OpenAI API: {responseString}");
+
+            return responseString;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error processing chat prompt in {nameof(ProcessChatPrompt)}");
+            throw;
+        }
     }
 
     public async Task<IActionResult> ProcessImagePrompt(ImageRequest imageRequest)
     {
-        var url = "v1/images/generations";
-
-        if (imageRequest.Model == null || imageRequest.ImagePromptText == null || imageRequest.Size == null)
+        if (imageRequest == null)
         {
-            throw new InvalidOperationException("One or more required properties are null.");
+            throw new ArgumentNullException(nameof(imageRequest), "Image request cannot be null.");
         }
 
-        var timeStamp = DateTime.Now;
-
-        var requestData = new Dictionary<string, object>
+        try
         {
-            { "model", imageRequest.Model },
-            { "prompt", imageRequest.ImagePromptText },
-            { "size", imageRequest.Size },
-            { "response_format", "url" },
-        };
+            var url = "v1/images/generations";
 
-        if (imageRequest.Samples != null)
-        {
-            requestData["n"] = imageRequest.Samples;
-        }
-
-        if (imageRequest.Hd == true)
-        {
-            requestData["quality"] = "hd";
-        }
-
-        if(imageRequest.Style == true) {
-            requestData["style"] = "natural";
-        }
-
-        var content = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PostAsync(url, content);
-
-        var responseString = await response.Content.ReadAsStringAsync();
-
-        var resultObject = JObject.Parse(responseString);
-
-        if (resultObject["data"] is JArray dataArray)
-        {
-            List<Task<string>> uploadTasks = new List<Task<string>>();
-            var image = new Image
+            if (imageRequest.Model == null || imageRequest.ImagePromptText == null || imageRequest.Size == null)
             {
-                UserId = 1,
-                ImagePromptText = imageRequest?.ImagePromptText,
-                Model = imageRequest?.Model ?? string.Empty,
-                Size = imageRequest?.Size ?? string.Empty,
-                Style = imageRequest?.Style,
-                Hd = imageRequest?.Hd ?? false,
-                TimeStamp = timeStamp
+                throw new InvalidOperationException("One or more required properties are null.");
+            }
+
+            var timeStamp = DateTime.Now;
+
+            var requestData = new Dictionary<string, object>
+            {
+                { "model", imageRequest.Model },
+                { "prompt", imageRequest.ImagePromptText },
+                { "size", imageRequest.Size },
+                { "response_format", "url" },
             };
 
-            try {
+            if (imageRequest.Samples != null)
+            {
+                requestData["n"] = imageRequest.Samples;
+            }
+
+            if (imageRequest.Hd == true)
+            {
+                requestData["quality"] = "hd";
+            }
+
+            if(imageRequest.Style == true) {
+                requestData["style"] = "natural";
+            }
+
+            var content = CreateJsonContent(requestData);
+
+            var responseString = await SendRequest(url, content);
+
+            var resultObject = JObject.Parse(responseString);
+
+            if (resultObject["data"] is JArray dataArray)
+            {
+                List<Task<string>> uploadTasks = new List<Task<string>>();
+                var image = CreateImage(imageRequest, timeStamp);
 
                 List<ImageReturn> returnImages = new List<ImageReturn>();
 
@@ -115,50 +111,78 @@ public class OpenAIClient
                     }
 
                     try {
-                        if (imageRequest != null) 
-                        {
-                            // Start uploading the image and add the task to the list
-                            uploadTasks.Add(_imageService.UploadBlobImage(image, imageUrl, timeStamp));
 
-                            ImageReturn returnImage = _imageService.CreateImageReturn(image, imageUrl);
-                            returnImages.Add(returnImage);
-                        }
-                        else {
-                            throw new ArgumentNullException(nameof(imageRequest), "Image request cannot be null.");
-                        }
+                        uploadTasks.Add(_imageService.UploadBlobImage(image, imageUrl, timeStamp));
+
+                        ImageReturn returnImage = _imageService.CreateImageReturn(image, imageUrl);
+                        returnImages.Add(returnImage);
                     }
                     catch (RequestFailedException e) {
-                        // If the upload fails, save the image to the database with error as BlobName
-                        Image newImage = (Image)image.Clone();
-                        newImage.BlobName = e.ToString();
-                        _context.Images.Add(newImage);
-                        _context.SaveChanges();
+                        HandleUploadFailure(e, image);
                     }
                 }
 
-                // Wait for all uploads to complete
                 var blobNames = await Task.WhenAll(uploadTasks);
 
-                // Save each image to the database
                 foreach (var blobName in blobNames)
                 {
-                    Image newImage = (Image)image.Clone();
+                    var newImage = CreateImage(imageRequest, timeStamp);
                     newImage.BlobName = blobName;
                     _context.Images.Add(newImage);
                 }
 
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Images were successfully stored in the database.");
 
                 return new OkObjectResult(returnImages);
             }
-            catch(Exception e) {
-                throw new Exception($"Error calling OpenAI API: {response.StatusCode}, Exception: {e.Message}");
+            else
+            {
+                _logger.LogError($"Invalid response from OpenAI API: {responseString}");
+                return new BadRequestObjectResult("Invalid response from the server.");
             }
         }
-        else
-        {
-            // Return an error response when resultObject["data"] is not a JArray
-            return new BadRequestObjectResult("Invalid response from the server.");
+        catch(Exception e) {
+            _logger.LogError(e, $"Error processing image prompt in {nameof(ProcessImagePrompt)}");
+            throw;
         }
+    }
+
+    private StringContent CreateJsonContent(object payload)
+    {
+        return new StringContent(
+            System.Text.Json.JsonSerializer.Serialize(payload), 
+            Encoding.UTF8, 
+            "application/json"
+        );
+    }
+
+    private async Task<string> SendRequest(string url, StringContent content)
+    {
+        var response = await _client.PostAsync(url, content);
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    private Image CreateImage(ImageRequest imageRequest, DateTime timeStamp)
+    {
+        return new Image
+        {
+            UserId = 1,
+            ImagePromptText = imageRequest?.ImagePromptText,
+            Model = imageRequest?.Model ?? string.Empty,
+            Size = imageRequest?.Size ?? string.Empty,
+            Style = imageRequest?.Style,
+            Hd = imageRequest?.Hd ?? false,
+            TimeStamp = timeStamp
+        };
+    }
+
+    private void HandleUploadFailure(RequestFailedException e, Image image)
+    {
+        Image newImage = (Image)image.Clone();
+        newImage.BlobName = e.ToString();
+        _context.Images.Add(newImage);
+        _context.SaveChangesAsync();
+        _logger.LogError(e, "Error uploading image to blob storage");
     }
 }

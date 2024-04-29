@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System;
 
 namespace backend.Controllers
 {
@@ -8,29 +10,30 @@ namespace backend.Controllers
     public class DbAccessController : ControllerBase
     {
         private readonly ImageService _imageService;
+        private readonly ILogger<DbAccessController> _logger;
 
-        public DbAccessController(ImageService imageService)
+        public DbAccessController(ImageService imageService, ILogger<DbAccessController> logger)
         {
-            _imageService = imageService;
+            _imageService = imageService ?? throw new ArgumentNullException(nameof(imageService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [HttpGet("images")]
         public async Task<IActionResult> GetImages()
         {
-            Console.WriteLine("Getting images...");
-            var imageUrls = await _imageService.GetImageUrlsAsync();
+            try
+            {
+                _logger.LogInformation("Getting images...");
+                var imageUrls = await _imageService.GetImageUrlsAsync();
 
-            Response.Headers.Add("Cache-Control", "no-store");
-            return Ok(imageUrls);
+                Response.Headers.Add("Cache-Control", "no-store");
+                return Ok(imageUrls);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting images");
+                return StatusCode(500, "Internal server error");
+            }
         }
-
-        // [HttpGet("decodeAndStore")]
-        // public async Task<IActionResult> DecodeAndStore()
-        // {
-        //     Console.WriteLine("Getting images...");
-        //     await _imageService.DecodeAndStoreImages();
-
-        //     return Ok();
-        // }
     }
 }

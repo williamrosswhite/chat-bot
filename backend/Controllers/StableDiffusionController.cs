@@ -5,51 +5,69 @@ using backend.Models;
 using backend.Migrations;
 using backend.Controllers;
 
-namespace backend.Controllers;
-
-[Route("stablediffusion")]
-[ApiController]
-public class StableDiffusionController : ControllerBase
+namespace backend.Controllers
 {
-    private readonly StableDiffusionClientService _stableDiffusionClientService;
-
-    public StableDiffusionController(StableDiffusionClientService stableDiffusionClientService)
+    [Route("stablediffusion")]
+    [ApiController]
+    public class StableDiffusionController : ControllerBase
     {
-        _stableDiffusionClientService = stableDiffusionClientService;
-    }
+        private readonly StableDiffusionClientService _stableDiffusionClientService;
+        private readonly ILogger<StableDiffusionController> _logger;
 
-    [HttpPost("ImageRequest")]
-    public async Task<IActionResult> ImageRequest([FromBody] ImageRequest imageRequest)
-    {
-        Console.WriteLine("attempting stable diffusion request");
-        Console.WriteLine($"Processing Request: " +
-            $"\nprompt text: {imageRequest.ImagePromptText}, " +
-            $"\nmodel: {imageRequest.Model}, " +
-            $"\nsize: {imageRequest.Size}, " +
-            $"\nnatural style: {imageRequest.Style}, " +
-            $"\nhd: {imageRequest.Hd}" +
-            $"\nguidance scale: {imageRequest.GuidanceScale}" +
-            $"\nsamples: {imageRequest.Samples}" +
-            $"\nseed: {imageRequest.Seed}" +
-            $"\ninference denoising steps: {imageRequest.InferenceDenoisingSteps}"
-        );
+        public StableDiffusionController(StableDiffusionClientService stableDiffusionClientService, ILogger<StableDiffusionController> logger)
+        {
+            _stableDiffusionClientService = stableDiffusionClientService ?? throw new ArgumentNullException(nameof(stableDiffusionClientService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
-        if(imageRequest != null && imageRequest.ImagePromptText != null) {
+        [HttpPost("ImageRequest")]
+        public async Task<IActionResult> ImageRequest([FromBody] ImageRequest imageRequest)
+        {
+            _logger.LogInformation("Processing StableDiffusion Image Request: " +
+                "ImagePromptText: {ImagePromptText}, " +
+                "Model: {Model}, " +
+                "Size: {Size}, " +
+                "Style: {Style}, " +
+                "Hd: {Hd}, " +
+                "GuidanceScale: {GuidanceScale}, " +
+                "InferenceDenoisingSteps: {InferenceDenoisingSteps}, " +
+                "Seed: {Seed}, " +
+                "Samples: {Samples}",
+                imageRequest?.ImagePromptText,
+                imageRequest?.Model,
+                imageRequest?.Size,
+                imageRequest?.Style,
+                imageRequest?.Hd,
+                imageRequest?.GuidanceScale,
+                imageRequest?.InferenceDenoisingSteps,
+                imageRequest?.Seed,
+                imageRequest?.Samples);
 
-            var result = await _stableDiffusionClientService.ProcessImagePrompt(imageRequest);
-
-            if (result != null)
+            if(imageRequest != null && imageRequest.ImagePromptText != null) 
             {
-                return result;
-            }
-            else
+                try
+                {
+                    var result = await _stableDiffusionClientService.ProcessImagePrompt(imageRequest);
+
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                    else
+                    {
+                        return BadRequest("imageData is null");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred while processing the image prompt");
+                    return StatusCode(500, "An error occurred while processing your request");
+                }
+            } 
+            else 
             {
-                // Handle the case when imageRequest is null
-                return BadRequest("imageData is null");
+                return BadRequest("imagePromptText is null");
             }
-        } else {
-            return BadRequest("imagePromptText is null");
         }
     }
-
 }

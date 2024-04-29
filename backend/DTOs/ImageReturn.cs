@@ -1,28 +1,79 @@
-namespace backend;
-
-public class ImageReturn
+namespace backend
 {
-    public string ImageUrl { get; set; }
-    public string ImagePromptText { get; set; }
-    public string Model { get; set; }
-    public string Size { get; set; }
-    public bool Style { get; set; }
-    public bool Hd { get; set; }
-    public int GuidanceScale { get; set; }
-    public int InferenceDenoisingSteps { get; set; }
-    public long Seed { get; set; }
-    public int Samples { get; set; }
-    public ImageReturn()
+    /// <summary>
+    /// Represents the return object for an image processing request.
+    /// </summary>
+    public class ImageReturn
     {
-        ImageUrl = "Image URL undefined";
-        ImagePromptText = "Image prompt text undefined";
-        Model = "Model undefined";
-        Size = "Size undefined";
-        Style = false;
-        Hd = false;
-        GuidanceScale = 0;
-        InferenceDenoisingSteps = 0;
-        Seed = 0;
-        Samples = 0;
+        private string _imageUrl = "Image URL undefined";
+        private string _imagePromptText = "Image prompt text undefined";
+        private string _model = "Model undefined";
+        private string _size = "Size undefined";
+
+        /// <summary>
+        /// Gets or sets the image URL. If not defined, defaults to "Image URL undefined".
+        /// </summary>
+        public string ImageUrl
+        {
+            get => _imageUrl;
+            set => _imageUrl = value ?? "Image URL undefined";
+        }
+
+        /// <summary>
+        /// Gets or sets the image prompt text. If not defined, defaults to "Image prompt text undefined".
+        /// </summary>
+        public string ImagePromptText
+        {
+            get => _imagePromptText;
+            set => _imagePromptText = value ?? "Image prompt text undefined";
+        }
+
+        /// <summary>
+        /// Gets or sets the model. If not defined, defaults to "Model undefined".
+        /// </summary>
+        public string Model
+        {
+            get => _model;
+            set => _model = value ?? "Model undefined";
+        }
+
+        /// <summary>
+        /// Gets or sets the size. If not defined, defaults to "Size undefined".
+        /// </summary>
+        public string Size
+        {
+            get => _size;
+            set => _size = value ?? "Size undefined";
+        }
+
+        /// <summary>
+        /// Gets or sets the style.
+        /// </summary>
+        public bool Style { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether HD is enabled.
+        /// </summary>
+        public bool Hd { get; set; }
+
+        /// <summary>
+        /// Gets or sets the guidance scale.
+        /// </summary>
+        public int GuidanceScale { get; set; }
+
+        /// <summary>
+        /// Gets or sets the inference denoising steps.
+        /// </summary>
+        public int InferenceDenoisingSteps { get; set; }
+
+        /// <summary>
+        /// Gets or sets the seed.
+        /// </summary>
+        public long Seed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of samples.
+        /// </summary>
+        public int Samples { get; set; }
     }
 }
