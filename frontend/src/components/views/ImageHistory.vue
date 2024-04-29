@@ -26,6 +26,7 @@ export default {
   methods: {
     getImages() {
       this.isLoading = true;
+      console.log('Getting next 25 images...');
       axios.get(`${process.env.VUE_APP_API_URL}/api/images`, {
         params: {
           limit: this.imageCount,

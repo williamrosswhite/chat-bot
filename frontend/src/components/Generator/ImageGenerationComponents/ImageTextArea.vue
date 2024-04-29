@@ -34,9 +34,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.text-area-component {
-  margin: 10px 0;
-}
-</style>

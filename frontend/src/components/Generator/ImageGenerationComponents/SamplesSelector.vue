@@ -4,7 +4,7 @@
         <label for="samples" class="label">Samples:</label>
         <b-form-select v-model="selectedSample" :options="samplesOptions" class="select"></b-form-select>
     </div>
-    <p class="small denoising-info">(Number of images to generate)</p>
+    <p class="small less-margin-top">(Number of images to generate)</p>
   </div>
 </template>
 
@@ -54,7 +54,7 @@ export default {
   font-size: 0.8em;
 }
 
-.denoising-info {
+.less-margin-top {
   margin-bottom: 1em;
 }
 
@@ -71,5 +71,9 @@ export default {
 
 .select {
   flex-grow: 1;
+}
+
+.bottom-element {
+  margin-bottom: 25px;
 }
 </style>

@@ -4,7 +4,7 @@
       <label for="denoisingSteps" class="label">Interference / Denoising Steps:</label>
       <b-form-select v-model="selectedDenoisingSteps" :options="interferenceDenoisingStepsOptions" class="select"></b-form-select>
     </div>
-    <p class="small denoising-info">(Higher values produce cleaner images)</p>
+    <p class="small less-margin-top">(Higher values produce cleaner images)</p>
   </div>
 </template>
 
@@ -51,7 +51,7 @@ export default {
   font-size: 0.8em;
 }
 
-.denoising-info {
+.less-margin-top {
   margin-bottom: 1em;
 }
 

@@ -25,14 +25,14 @@ namespace backend.Controllers
         {
             _logger.LogInformation("Processing OpenAi Chat Request:");
 
-            if (chatRequest?.Messages != null)
+            if (chatRequest?.messages != null)
             {
-                for (int i = 0; i < chatRequest.Messages.Length; i++)
+                for (int i = 0; i < chatRequest.messages.Length; i++)
                 {
-                    _logger.LogInformation("Processing message {MessageNumber} in chatRequest: Role: {Role}, Content: {Content}", 
+                    _logger.LogInformation("Processing message {MessageNumber} in chatRequest: role: {role}, content: {content}", 
                         i + 1, 
-                        chatRequest.Messages[i].Role, 
-                        chatRequest.Messages[i].Content);
+                        chatRequest.messages[i].role, 
+                        chatRequest.messages[i].content);
                 }
             }
             else

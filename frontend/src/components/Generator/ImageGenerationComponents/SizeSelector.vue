@@ -12,7 +12,7 @@ export default {
   props: ['model', 'size'],
   data() {
     return {
-      selectedSize: '256x256',
+      selectedSize: '1024x1024',
     };
   },
   computed: {

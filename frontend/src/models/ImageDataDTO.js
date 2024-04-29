@@ -22,7 +22,7 @@ export class ImageDataDTO {
       guidanceScale: this.guidanceScale,
       samples: this.samples,
       inferenceDenoisingSteps: this.inferenceDenoisingSteps,
-      seed: this.seed || 0
+      seed: this.seed ? this.seed.toString() : '0'
     };
   }
 }
