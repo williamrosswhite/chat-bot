@@ -1,6 +1,8 @@
 <template>
   <ImageDeck v-if="images.length > 0" :images="images" />  
   <p class="processing" v-show="isLoading">Processing...</p>
+  <b-spinner v-if="isLoading" type="grow" label="Loading..."></b-spinner>
+  <div class="overlay" v-if="isLoading"></div>
   <br>
   <p class="describe">Describe what you'd like to see...</p>
   <ImageTextArea @prompt-change="handlePromptChange" @enter-clicked="processImagePrompt"/>
@@ -22,6 +24,7 @@
   import { processImagePrompt } from '@/services/ImageProcessingService';
   import { mapImageData } from '@/services/ImageDataMapper';
   import { ImageDataDTO } from '@/models/ImageDataDTO';
+  import { BSpinner } from 'bootstrap-vue-3'
   import ImageDeck from '@/components/ImageComponents/ImageDeck.vue';
   import GuidanceScale from '@/components/Generator/ImageGenerationComponents/GuidanceScale.vue';
   import ImageTextArea from '@/components/Generator/ImageGenerationComponents/ImageTextArea.vue';
@@ -85,7 +88,7 @@
           });
 
           const responseData = await processImagePrompt(imageDataDTO);
-          console.log('image request response:', responseData);
+          console.log('Image request response:', responseData);
           const mappedData = mapImageData(responseData);
           this.images.push(...mappedData);
 
@@ -129,7 +132,8 @@
       InterferenceDenoisingSteps,
       SamplesSelector,
       ProcessImageButton,
-      SeedInput
+      SeedInput,
+      BSpinner
     }    
   };
 </script>

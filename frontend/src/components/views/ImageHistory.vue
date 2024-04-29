@@ -18,10 +18,10 @@ export default {
   },
   methods: {
     getImages() {
-      console.log('getting images, this could take a while...');
+      console.log('Getting images, this could take a while...');
       axios.get(`${process.env.VUE_APP_API_URL}/api/images`)
         .then(response => {
-          console.log('images received:', response.data);
+          console.log('Images received:', response.data);
           this.images.push(...response.data.value.map(item => ({
               imageUrl: item.imageUrl,
               imagePromptText: item.imagePromptText,
