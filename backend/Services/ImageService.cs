@@ -37,11 +37,22 @@ public class ImageService
         }    
     }
 
-    internal async Task<IActionResult> GetImageUrlsAsync()
+    internal async Task<IActionResult> GetImageUrlsAsync(int limit, int offset)
     {
+        // Validate input
+        if (limit < 0 || offset < 0)
+        {
+            _logger.LogError($"Invalid parameters in {nameof(GetImageUrlsAsync)}: limit and offset must be non-negative.");
+            return new BadRequestObjectResult("Invalid parameters: limit and offset must be non-negative.");
+        }
+
         try
         {
             var images = await GetImagesAsync().ConfigureAwait(false);
+
+            // Take requested number of images in descending order by date from the provided offset
+            images = images.OrderByDescending(image => image.TimeStamp).Skip(offset).Take(limit).ToList();
+
             var containerClient = _blobServiceClient.GetBlobContainerClient("generated-images");
 
             List<ImageReturn> returnImages = new List<ImageReturn>();
@@ -68,6 +79,10 @@ public class ImageService
                     ImageReturn returnImage = CreateImageReturn(image, sasToken.ToString());
                     returnImages.Add(returnImage);
                 }
+                else
+                {
+                    _logger.LogWarning($"Image with ID {image.Id} has null BlobName in {nameof(GetImageUrlsAsync)}.");
+                }
             }
 
             return new OkObjectResult(returnImages);
@@ -92,7 +107,7 @@ public class ImageService
                 .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(5, retryAttempt)),        
                     onRetry: (exception, timeSpan, retryCount, context) =>
                     {
-                        _logger.LogInformation($"Retry {retryCount} encountered. Waiting {timeSpan.TotalSeconds} seconds before next attempt.");
+                        _logger.LogInformation($"Blob storage upload retry {retryCount}. Waiting {timeSpan.TotalSeconds} seconds before next attempt.");
                     });
 
             HttpResponseMessage imageResponse;

@@ -13,6 +13,7 @@
     <HdCheckbox  v-show="model === 'dall-e-3' || model === 'stable-diffusion'" v-model="hd" :model="model" />
   </div>
   <div id="warning-banner" v-show="model === 'stable-diffusion'" class="alert alert-warning" role="alert">Warning: Stable Diffusion can produce NSFW Images</div>
+  <div id="warning-banner" v-show="model === 'stable-diffusion'" class="alert alert-warning" role="alert">Note: dal-e-3 costs me per use.  Not a lot so don't worry about it, just plese be mindful.  Stable Diffusion is subscription and you can use freely.</div>
   <GuidanceScale  v-show="model === 'stable-diffusion'" :guidanceScale="guidanceScale" :model="model" @update:modelValue="handleGuidanceScaleChange" />
   <InterferenceDenoisingSteps v-show="model === 'stable-diffusion'" :model="model" :interferenceDenoisingSteps="interferenceDenoisingSteps" />
   <SamplesSelector v-show="model === 'stable-diffusion' || model === 'dall-e-2'" :model="model" :samples="samples" @update:samples="samples = $event" />
@@ -96,7 +97,11 @@
             this.seed = responseData[0].seed;
           }
         } catch (error) {
-          alert(error.message);
+          if (error.response && error.response.data && error.response.data.message) {
+            alert(error.response.data);
+          } else {
+            alert(error.message);
+          }
         } finally {
           this.isLoading = false;
         }

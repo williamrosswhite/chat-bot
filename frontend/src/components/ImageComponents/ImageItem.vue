@@ -40,9 +40,9 @@ export default {
 }
 
 .image {
-  object-fit: contain; /* Add this line */
-  max-height: 65vh; /* Adjust this value as needed */
-  width: 100%; /* Add this line */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .info {

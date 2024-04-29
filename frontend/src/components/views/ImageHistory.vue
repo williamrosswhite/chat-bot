@@ -1,10 +1,15 @@
 <template>
-  <ImageDeck v-if="images.length > 0" :images="images" />  
+  <div>
+    <ImageDeck v-if="images.length > 0" :images="images" />
+    <div ref="observer"></div>
+    <p v-if="isLoading" class="loading-text">Retrieving more pictures...</p>
+  </div>
 </template>
 
 <script>
 import axios from 'axios'
 import ImageDeck from '@/components/ImageComponents/ImageDeck.vue'
+import { ImageDataDTO } from '@/models/ImageDataDTO.js'
 
 export default {
   name: 'ImageHistory',
@@ -13,32 +18,48 @@ export default {
   },
   data() {
     return {
-      images: []
+      images: [],
+      imageCount: 25,
+      isLoading: false
     }
   },
   methods: {
     getImages() {
-      console.log('Getting images, this could take a while...');
-      axios.get(`${process.env.VUE_APP_API_URL}/api/images`)
+      this.isLoading = true;
+      axios.get(`${process.env.VUE_APP_API_URL}/api/images`, {
+        params: {
+          limit: this.imageCount,
+          offset: this.images.length
+        }
+      })
         .then(response => {
-          console.log('Images received:', response.data);
-          this.images.push(...response.data.value.map(item => ({
-              imageUrl: item.imageUrl,
-              imagePromptText: item.imagePromptText,
-              model: item.model,
-              guidanceScale: item.guidanceScale,
-              hd: item.hd,
-              inferenceDenoisingSteps: item.inferenceDenoisingSteps,
-              samples: item.samples,
-              seed: item.seed,
-              size: item.size,
-              style: item.style
-            })));    
-        })
-    },
+          this.images.push(...response.data.value.map(item => new ImageDataDTO(item)));
+          this.isLoading = false;
+        });
+    }
   },
-  created() {
-    this.getImages()
+  mounted() {
+    const options = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 1.0
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.getImages();
+        }
+      });
+    }, options);
+
+    observer.observe(this.$refs.observer);
   }
 }
 </script>
+
+<style scoped>
+.loading-text {
+  padding-top: 20px;
+}
+</style>
