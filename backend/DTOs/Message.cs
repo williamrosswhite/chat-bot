@@ -5,25 +5,25 @@ namespace backend
     /// </summary>
     public class ChatMessage
     {
-        private string _role = "Role undefined";
-        private string _content = "Content undefined";
+        private string _role = "role undefined";
+        private string _content = "content undefined";
 
         /// <summary>
-        /// Gets or sets the role. If not defined, defaults to "Role undefined".
+        /// Gets or sets the role. If not defined, defaults to "role undefined".
         /// </summary>
-        public string Role
+        public string role
         {
             get => _role;
-            set => _role = value ?? "Role undefined";
+            set => _role = value ?? "role undefined";
         }
 
         /// <summary>
-        /// Gets or sets the content. If not defined, defaults to "Content undefined".
+        /// Gets or sets the content. If not defined, defaults to "content undefined".
         /// </summary>
-        public string Content
+        public string content
         {
             get => _content;
-            set => _content = value ?? "Content undefined";
+            set => _content = value ?? "content undefined";
         }
     }
 }

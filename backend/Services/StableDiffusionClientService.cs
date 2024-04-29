@@ -5,8 +5,6 @@ using Newtonsoft.Json;
 using backend.Models;
 using Polly.Fallback;
 using Azure;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
 
 public class StableDiffusionClientService
 {
@@ -161,33 +159,29 @@ public class StableDiffusionClientService
             // Wait for all uploadTasks to complete
             string[] blobNames = await Task.WhenAll(uploadTasks);
 
-            // Prepare images for database and add them all at once
-            var images = blobNames.Select(blobName => new Image { 
-                UserId = 1, 
-                ImagePromptText = imageRequest.ImagePromptText, 
-                Model = imageRequest.Model, 
-                Size = imageRequest.Size, 
-                Style = null,
-                Hd = imageRequest.Hd,
-                InferenceDenoisingSteps = imageRequest.InferenceDenoisingSteps,
-                GuidanceScale = imageRequest.GuidanceScale,
-                TimeStamp = timeStamp,
-                Seed = jsonResponse.meta?.seed ?? "Seed undefined",
-                BlobName = blobName
-            }).ToList();
+            // Add images to database and save changes
+            foreach (var blobName in blobNames)
+            {
+                var image = new Image { 
+                    UserId = 1, 
+                    ImagePromptText = imageRequest.ImagePromptText, 
+                    Model = imageRequest.Model, 
+                    Size = imageRequest.Size, 
+                    Style = null,
+                    Hd = imageRequest.Hd,
+                    InferenceDenoisingSteps = imageRequest.InferenceDenoisingSteps,
+                    GuidanceScale = imageRequest.GuidanceScale,
+                    TimeStamp = timeStamp,
+                    Seed = jsonResponse.meta?.seed ?? "Seed undefined"
+                };
 
-            _dBcontext.Images.AddRange(images);
+                image.BlobName = blobName;
+                _dBcontext.Images.Add(image);
+            }
             
             await _dBcontext.SaveChangesAsync();
             _logger.LogInformation("Images were successfully stored in the database.");
 
-        } catch (DbUpdateException e) {
-            _logger.LogError($"Error saving images to database: {e.Message}");
-            foreach (var entry in e.Entries)
-            {
-                _logger.LogError($"Entity that caused exception: {entry.Entity.GetType().Name}");
-            }
-            return new BadRequestObjectResult($"Error saving images to database: {e.Message}");
         } catch (Exception e) {
             _logger.LogError($"Error saving images to database: {e.Message}");
             return new BadRequestObjectResult($"Error saving images to database: {e.Message}");

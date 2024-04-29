@@ -1,6 +1,6 @@
 <template>
   <div class="generation-option">
-    <label for="hd" class="radio-button">HD:</label>
+    <label for="hd" class="more-margin-right">HD:</label>
     <input type="checkbox" id="hd" v-model="checked" @change="onChange">
   </div>
 </template>

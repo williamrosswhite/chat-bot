@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 
@@ -19,12 +18,12 @@ namespace backend.Controllers
         }
 
         [HttpGet("images")]
-        public async Task<IActionResult> GetImages()
+        public async Task<IActionResult> GetImages([FromQuery] int limit = 25, int offset = 0)
         {
             try
             {
-                _logger.LogInformation("Getting images...");
-                var imageUrls = await _imageService.GetImageUrlsAsync();
+                _logger.LogInformation($"Retrieving next {limit} most recent images...");
+                var imageUrls = await _imageService.GetImageUrlsAsync(limit, offset);
 
                 Response.Headers.Add("Cache-Control", "no-store");
                 return Ok(imageUrls);

@@ -16,13 +16,13 @@ export class ImageDataDTO {
     return {
       imagePromptText: this.imagePromptText,
       model: this.model,
-      size: String(this.size), // convert size to string
+      size: String(this.size),
       style: this.style === 'natural' ? true : false,
       hd: this.hd,
       guidanceScale: this.guidanceScale,
       samples: this.samples,
       inferenceDenoisingSteps: this.inferenceDenoisingSteps,
-      seed: this.seed || 0
+      seed: this.seed ? this.seed.toString() : '0'
     };
   }
 }

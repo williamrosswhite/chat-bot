@@ -1,6 +1,8 @@
 <template>
   <ImageDeck v-if="images.length > 0" :images="images" />  
   <p class="processing" v-show="isLoading">Processing...</p>
+  <b-spinner v-if="isLoading" class="spinner" type="grow" label="Loading..."></b-spinner>
+  <div class="overlay" v-if="isLoading"></div>
   <br>
   <p class="describe">Describe what you'd like to see...</p>
   <ImageTextArea @prompt-change="handlePromptChange" @enter-clicked="processImagePrompt"/>
@@ -10,18 +12,21 @@
     <StyleSelector v-show="model === 'dall-e-3'" :model="model" :style="style" @style-change="handleStyleChange" />
     <HdCheckbox  v-show="model === 'dall-e-3' || model === 'stable-diffusion'" v-model="hd" :model="model" />
   </div>
-  <div id="warning-banner" v-show="model === 'stable-diffusion'" class="alert alert-warning" role="alert">Warning: Stable Diffusion can produce NSFW Images</div>
+  <div v-show="model === 'stable-diffusion'" class="alert alert-warning warning-banner" role="alert">Warning: Stable Diffusion can produce NSFW Images</div>
+  <div v-show="model === 'dall-e-3'" class="alert alert-warning warning-banner" role="alert">Note: dal-e-3 costs me per use.  Not a lot so don't worry about it, just plese be mindful.  Stable Diffusion is subscription and you can use freely.</div>
   <GuidanceScale  v-show="model === 'stable-diffusion'" :guidanceScale="guidanceScale" :model="model" @update:modelValue="handleGuidanceScaleChange" />
   <InterferenceDenoisingSteps v-show="model === 'stable-diffusion'" :model="model" :interferenceDenoisingSteps="interferenceDenoisingSteps" />
   <SamplesSelector v-show="model === 'stable-diffusion' || model === 'dall-e-2'" :model="model" :samples="samples" @update:samples="samples = $event" />
-  <ProcessImageButton :isDisabled="isButtonDisabled" @click="processImagePrompt" />    
-  <SeedInput v-show="model === 'stable-diffusion'"/>
+  <ProcessImageButton variant="success" :isDisabled="isButtonDisabled" @click="processImagePrompt" />   
+  <b-spinner v-if="isLoading" class="spinner" type="grow" label="Loading..."></b-spinner> 
+  <SeedInput v-show="model === 'stable-diffusion'" :seedValue="seed.toString()" @update:seedValue="handleUpdateSeedValue" @seed-cleared="seed = ''"/>
 </template>
   
 <script>
   import { processImagePrompt } from '@/services/ImageProcessingService';
   import { mapImageData } from '@/services/ImageDataMapper';
   import { ImageDataDTO } from '@/models/ImageDataDTO';
+  import { BSpinner } from 'bootstrap-vue-3'
   import ImageDeck from '@/components/ImageComponents/ImageDeck.vue';
   import GuidanceScale from '@/components/Generator/ImageGenerationComponents/GuidanceScale.vue';
   import ImageTextArea from '@/components/Generator/ImageGenerationComponents/ImageTextArea.vue';
@@ -34,7 +39,6 @@
   import ProcessImageButton from '@/components/Generator/ImageGenerationComponents/ProcessImageButton.vue';
   import SeedInput from '@/components/Generator/ImageGenerationComponents/SeedInput.vue';
 
-
   export default {
     data() {
       return {
@@ -42,13 +46,13 @@
         images: [],
         isLoading: false,
         model: 'stable-diffusion',
-        size: '256x256',
+        size: '1024x1024',
         hd: false,
         style: 'natural',
         guidanceScale: 1, // initial value for the slider
         interferenceDenoisingSteps: 0, // default value for the denoising steps
         samples: 1, // default value for the number of images to generate
-        seed: "",
+        seed: '',
         isButtonDisabled: false
       };
     },
@@ -64,9 +68,9 @@
           this.samples = 1; // reset samples to 1
         }
         if (newModel === 'stable-diffusion') {
-          this.size = '256x256';
+          this.size = '1024x1024';
         }
-      }
+      },
     },
     methods: {
       async processImagePrompt() {
@@ -85,15 +89,20 @@
           });
 
           const responseData = await processImagePrompt(imageDataDTO);
-          console.log('image request response:', responseData);
+          console.log('Image request response:', responseData);
           const mappedData = mapImageData(responseData);
           this.images.push(...mappedData);
 
           if (responseData.length > 0 && this.model === 'stable-diffusion') {
+            console.log(responseData[0].seed);
             this.seed = responseData[0].seed;
           }
         } catch (error) {
-          alert(error.message);
+          if (error.response && error.response.data && error.response.data.message) {
+            alert(error.response.data);
+          } else {
+            alert(error.message);
+          }
         } finally {
           this.isLoading = false;
         }
@@ -116,6 +125,9 @@
       },
       handleGuidanceScaleChange(newScale) {
         this.guidanceScale = newScale;
+      },
+      handleUpdateSeedValue(newSeedValue) {
+        this.seed = newSeedValue;
       }
     },
     components: {
@@ -129,7 +141,61 @@
       InterferenceDenoisingSteps,
       SamplesSelector,
       ProcessImageButton,
-      SeedInput
+      SeedInput,
+      BSpinner
     }    
   };
 </script>
+
+
+<style scoped>
+.selectors {
+  padding-top: 20px;
+  padding-bottom: 20px; 
+}
+
+.processing {
+  margin-top: 40px;
+  margin-bottom: 0px;
+}
+
+.describe {
+  margin-top: 10px;
+  margin-bottom: 40px;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+}
+
+.warning-banner {
+  display: block;
+  width: 100%;
+  padding: 10px 50px;
+  margin: 0 auto; /* centers the element horizontally */
+  max-width: 85%;;
+}
+
+.spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: auto;
+  margin-top: 30px;
+  color: green
+}
+
+@media (max-width: 720px) {
+  #warning-banner {
+    display: inline-block;
+    padding: 10px 15px;
+    margin-top: 0px;
+  }
+}
+</style>

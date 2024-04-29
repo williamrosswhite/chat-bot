@@ -36,7 +36,8 @@
         promptResponse: '',
         history: [],
         secretInput: '',
-        secret: process.env.VUE_APP_SECRET  // Add this line
+        secret: process.env.VUE_APP_SECRET,  // Add this line
+        isButtonDisabled: false
       }
     },
     methods: {
