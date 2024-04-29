@@ -8,6 +8,6 @@ namespace backend
         /// <summary>
         /// Gets or sets the messages in the chat request.
         /// </summary>
-        public ChatMessage[]? Messages { get; set; }
+        public ChatMessage[]? messages { get; set; }
     }
 }

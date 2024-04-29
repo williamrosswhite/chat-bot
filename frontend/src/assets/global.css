@@ -1,11 +1,3 @@
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
 h3 {
   margin: 40px 0 0;
 }
@@ -24,22 +16,21 @@ a {
   color: #42b983;
 }
 
-.alert {
-  text-align: center;
+textarea {
+  height: 200px;
+}
+
+body hr {
+  width: 45%;
+  margin: 40px auto;
 }
 
 .assistant {
   color: #631497;
-  ;
 }
 
 .user {
   color: green;
-}
-
-.selectors {
-  padding-top: 20px;
-  padding-bottom: 20px; 
 }
 
 .generation-option {
@@ -52,21 +43,11 @@ a {
   white-space: nowrap;
 }
 
-.slider-value {
+.more-margin-left {
   margin-left: 10px;
 }
 
-.slider-component {
-  margin-bottom: 15px;
-}
-
-.checkbox-container {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-}
-
-.radio-button {
+.more-margin-right {
   margin-right: 5px;
 }
 
@@ -83,92 +64,42 @@ a {
   width: 25%;
 }
 
-.denoising-info {
+.less-margin-top {
   margin-top: -15px;
-}
-
-.bottom-element {
-  margin-bottom: 25px;
-}
-
-.seed {
-  padding-top: 40px;
-}
-
-
-.processing {
-  margin-top: 40px;
-  margin-bottom: 0px;
-}
-
-.describe {
-  margin-top: 10px;
-  margin-bottom: 40px;
-}
-
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
-}
-
-/* Default styles for desktop and larger screens */
-#app {
-  margin-top: 60px;
-}
-
-textarea {
-  height: 200px;
 }
 
 .text-area {
   width: 40%;
 }
 
-#warning-banner {
-  display: inline-block;
-  padding: 10px 50px;
-  margin-top: 0px;
-}
-
-body hr {
-  width: 45%;
-  margin: 40px auto;
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
 }
 
 /* Styles for tablet and smaller screens */
 @media ( min-width: 720px) and (max-width: 1500px) {
-  #app {
-    margin-top: 30px;
-  }
-
-  textarea {
-    height: 200px;
+  body hr {
+    width: 75%;
   }
   
   .text-area {
     width: 65%;
   }
 
-  body hr {
-    width: 75%;
+  #app {
+    margin-top: 30px;
   }
 }
 
 /* Styles for mobile and smaller screens */
 @media (max-width: 720px) {
-  #app {
-    margin-top: 15px;
-  }
-
-  #warning-banner {
-    display: inline-block;
-    padding: 10px 15px;
-    margin-top: 0px;
+  body hr {
+    width: 90%;
   }
 
   textarea {
@@ -179,7 +110,7 @@ body hr {
     width: 85%;
   }
 
-  body hr {
-    width: 90%;
+  #app {
+    margin-top: 15px;
   }
 }

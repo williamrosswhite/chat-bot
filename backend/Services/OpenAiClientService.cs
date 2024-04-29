@@ -28,7 +28,7 @@ public class OpenAIClient
         {
             var payload = new {
                 model = "gpt-3.5-turbo",
-                chatRequest.Messages
+                chatRequest.messages
             };
             
             var content = CreateJsonContent(payload);
