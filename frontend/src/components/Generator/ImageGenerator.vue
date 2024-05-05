@@ -10,12 +10,12 @@
     <ModelSelector :model="model" @model-change="handleModelChange" />
     <SizeSelector :model="model" :size="size" @size-change="handleSizeChange" />
     <StyleSelector v-show="model === 'dall-e-3'" :model="model" :style="style" @style-change="handleStyleChange" />
-    <HdCheckbox  v-show="model === 'dall-e-3' || model === 'stable-diffusion'" v-model="hd" :model="model" />
+    <HdCheckbox :hd="hd" @hd-change="handleHdChange" />
   </div>
   <div v-show="model === 'stable-diffusion'" class="alert alert-warning warning-banner" role="alert">Warning: Stable Diffusion can produce NSFW Images</div>
-  <div v-show="model === 'dall-e-3'" class="alert alert-warning warning-banner" role="alert">Note: dal-e-3 costs me per use.  Not a lot so don't worry about it, just plese be mindful.  Stable Diffusion is subscription and you can use freely.</div>
-  <GuidanceScale  v-show="model === 'stable-diffusion'" :guidanceScale="guidanceScale" :model="model" @update:modelValue="handleGuidanceScaleChange" />
-  <InterferenceDenoisingSteps v-show="model === 'stable-diffusion'" :model="model" :interferenceDenoisingSteps="interferenceDenoisingSteps" />
+  <div v-show="model === 'dall-e-3'" class="alert alert-warning warning-banner dalle3-warning" role="alert">Note: dal-e-3 costs me per use.  Not a lot so don't worry about it, just plese be mindful.  Stable Diffusion is subscription and you can use freely.</div>
+  <GuidanceScale  v-show="model === 'stable-diffusion'" :guidanceScale="guidanceScale" :model="model" @guidance-scale-change="handleGuidanceScaleChange" />
+  <InferenceDenoisingSteps :inferenceDenoisingSteps="inferenceDenoisingSteps" @inference-denoising-steps-change="handleInferenceDenoisingStepsChange" v-show="model === 'stable-diffusion'"/>
   <SamplesSelector v-show="model === 'stable-diffusion' || model === 'dall-e-2'" :model="model" :samples="samples" @update:samples="samples = $event" />
   <ProcessImageButton variant="success" :isDisabled="isButtonDisabled" @click="processImagePrompt" />   
   <b-spinner v-if="isLoading" class="spinner" type="grow" label="Loading..."></b-spinner> 
@@ -34,7 +34,7 @@
   import ModelSelector from '@/components/Generator/ImageGenerationComponents/ModelSelector.vue';
   import SizeSelector from '@/components/Generator/ImageGenerationComponents/SizeSelector.vue';
   import StyleSelector from '@/components/Generator/ImageGenerationComponents/StyleSelector.vue';
-  import InterferenceDenoisingSteps from '@/components/Generator/ImageGenerationComponents/InterferenceDenoisingSteps.vue';
+  import InferenceDenoisingSteps from '@/components/Generator/ImageGenerationComponents/InferenceDenoisingSteps.vue';
   import SamplesSelector from '@/components/Generator/ImageGenerationComponents/SamplesSelector.vue';
   import ProcessImageButton from '@/components/Generator/ImageGenerationComponents/ProcessImageButton.vue';
   import SeedInput from '@/components/Generator/ImageGenerationComponents/SeedInput.vue';
@@ -50,7 +50,7 @@
         hd: false,
         style: 'natural',
         guidanceScale: 1, // initial value for the slider
-        interferenceDenoisingSteps: 0, // default value for the denoising steps
+        inferenceDenoisingSteps: 0, // default value for the denoising steps
         samples: 1, // default value for the number of images to generate
         seed: '',
         isButtonDisabled: false
@@ -75,6 +75,7 @@
     methods: {
       async processImagePrompt() {
         this.isLoading = true;
+        console.log(this.inferenceDenoisingSteps)
         try {
           const imageDataDTO = new ImageDataDTO({
             imagePromptText: this.userImagePromptText,
@@ -84,7 +85,7 @@
             hd: this.hd,
             samples: this.samples,
             guidanceScale: this.guidanceScale,
-            inferenceDenoisingSteps: this.interferenceDenoisingSteps,
+            inferenceDenoisingSteps: this.inferenceDenoisingSteps,
             seed: this.seed
           });
 
@@ -117,8 +118,8 @@
       handleStyleChange(newStyle) {
         this.style = newStyle;
       },
-      handleDenoisingChange(newSteps) {
-        this.interferenceDenoisingSteps = newSteps;
+      handleInferenceDenoisingStepsChange(newSteps) {
+        this.inferenceDenoisingSteps = newSteps;
       },
       handleSizeChange(newSize) {
         this.size = newSize;
@@ -128,6 +129,9 @@
       },
       handleUpdateSeedValue(newSeedValue) {
         this.seed = newSeedValue;
+      },
+      handleHdChange(newHdValue) {
+        this.hd = newHdValue;
       }
     },
     components: {
@@ -138,7 +142,7 @@
       ModelSelector,
       SizeSelector,
       StyleSelector,
-      InterferenceDenoisingSteps,
+      InferenceDenoisingSteps,
       SamplesSelector,
       ProcessImageButton,
       SeedInput,
@@ -189,6 +193,10 @@
   margin: auto;
   margin-top: 30px;
   color: green
+}
+
+.dalle3-warning {
+  margin-bottom: 30px;;
 }
 
 @media (max-width: 720px) {

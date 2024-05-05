@@ -53,7 +53,7 @@ public class StableDiffusionClientService
             height = (dimensions != null && dimensions.Length > 1) ? dimensions[1] : "",
             samples = imageRequest.Samples,
             enhance_style = imageRequest.Hd == true ? "yes" : "no",
-            num_inference_steps = 51,
+            num_inference_steps = imageRequest.InferenceDenoisingSteps.ToString(),
             self_attention = "yes",
             guidance_scale = imageRequest.GuidanceScale.ToString(),
             seed = imageRequest.Seed

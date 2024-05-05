@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="option-container">
-      <label for="denoisingSteps" class="label">Interference / Denoising Steps:</label>
-      <b-form-select v-model="selectedDenoisingSteps" :options="interferenceDenoisingStepsOptions" class="select"></b-form-select>
+      <label for="denoisingSteps" class="label">Inference / Denoising Steps:</label>
+      <b-form-select v-model="inferenceDenoisingStepsSelected" :options="inferenceDenoisingStepsOptions" class="select"></b-form-select>
     </div>
     <p class="small less-margin-top">(Higher values produce cleaner images)</p>
   </div>
@@ -17,14 +17,14 @@ export default {
     BFormSelect
   },
   props: {
-    interferenceDenoisingSteps: {
+    inferenceDenoisingSteps: {
       type: Number,
       required: true
     }
   },
   data() {
     return {
-      interferenceDenoisingStepsOptions: [
+      inferenceDenoisingStepsOptions: [
         { value: 0, text: '0' },
         { value: 21, text: '21' },
         { value: 31, text: '31' },
@@ -34,12 +34,12 @@ export default {
     }
   },
   computed: {
-    selectedDenoisingSteps: {
+    inferenceDenoisingStepsSelected: {
       get() {
-        return this.interferenceDenoisingSteps;
+        return this.inferenceDenoisingSteps;
       },
       set(value) {
-        this.$emit('update:interferenceDenoisingSteps', value);
+        this.$emit('inference-denoising-steps-change', value);
       }
     }
   }

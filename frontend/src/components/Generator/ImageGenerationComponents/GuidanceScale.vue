@@ -1,8 +1,8 @@
 <template>
   <div class="generation-option slider-component">
     <label for="slider" class="label">Guidance Scale:</label>
-    <input type="range" id="slider" v-model.number="localGuidanceScale" min="1" max="20" @input="emitValue">
-    <span class="more-margin-left">{{ localGuidanceScale }}</span>
+    <input type="range" id="slider" v-model.number="guidanceScaleSelected" min="1" max="20" @input="emitValue">
+    <span class="more-margin-left">{{ guidanceScaleSelected }}</span>
     <p class="small">(Controls how strictly image keeps to the prompt)</p>
   </div>
 </template>
@@ -19,19 +19,14 @@ export default {
       required: true
     }
   },
-  data() {
-    return {
-      localGuidanceScale: this.guidanceScale
-    };
-  },
-  watch: {
-    guidanceScale(newVal) {
-      this.localGuidanceScale = newVal;
-    }
-  },
-  methods: {
-    emitValue() {
-      this.$emit('update:guidanceScale', this.localGuidanceScale);
+  computed: {
+    guidanceScaleSelected: {
+      get() {
+        return this.guidanceScale;
+      },
+      set(value) {
+        this.$emit('guidance-scale-change', value);
+      }
     }
   }
 };

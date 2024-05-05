@@ -1,35 +1,26 @@
 <template>
   <div class="generation-option">
-    <label for="hd" class="more-margin-right">HD:</label>
-    <input type="checkbox" id="hd" v-model="checked" @change="onChange">
+    <label for="hd" class="radio-button">HD:</label>
+    <input v-model="hdChecked" type="checkbox">
   </div>
 </template>
 
 <script>
 export default {
   props: {
-    model: {
-      type: String,
-      required: true
-    },
-    value: {
+    hd: {
       type: Boolean,
       default: false
     }
   },
   computed: {
-    checked: {
+    hdChecked: {
       get() {
-        return this.value;
+        return this.hd;
       },
-      set(val) {
-        this.$emit('input', val);
+      set(value) {
+        this.$emit('hd-change', value);
       }
-    }
-  },
-  methods: {
-    onChange(event) {
-      this.$emit('input', event.target.checked);
     }
   }
 };
